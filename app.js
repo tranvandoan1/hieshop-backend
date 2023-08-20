@@ -6,7 +6,7 @@ import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import expressValidator from "express-validator";
 import cors from "cors";
-import categoryRoutes from "./routes/categoris";
+import categoryRoutes from "./routes/Categoris";
 import productRoutes from "./routes/Products";
 import authRoutes from "./routes/Auth";
 import userRoutes from "./routes/Users";
