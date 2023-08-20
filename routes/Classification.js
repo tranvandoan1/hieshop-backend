@@ -1,5 +1,5 @@
 import express from 'express';
-import { create, list, update, Id, readPhoto, read, removes } from '../controllers/classification';
+import { create, list, update, Id, readPhoto, read, removes } from '../controllers/Classification';
 const router = express.Router();
 
 router.post('/classifies', create);
