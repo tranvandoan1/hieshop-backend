@@ -1,5 +1,5 @@
 import express from "express";
-import { signup, signin, signout } from "../controllers/auth";
+import { signup, signin, signout } from "../controllers/Auth";
 import { userSignupValidator } from "../validator";
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");

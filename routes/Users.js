@@ -11,7 +11,7 @@ import {
     checkEmailUpload,
     uploadPassword,
 } from "../controllers/Users";
-import { requireSignin, isAdmin, isAuth } from "../controllers/auth";
+import { requireSignin, isAdmin, isAuth } from "../controllers/Auth";
 import { isAuthenticateUser } from "../middlewares/CheckAuth";
 import fs from "fs";
 import multer from "multer";
