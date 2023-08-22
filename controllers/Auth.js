@@ -34,22 +34,16 @@ export const signup = (req, res) => {
   });
 };
 export const signin = async (req, res) => {
-  // const { value, password } = req.body;
-  console.log(req.body, "req.body");
-  console.log(req.body.select, 'req.body.select')
   if (req.body.select == "google") {
     const userGoogle = await User.findOne({
       uid: req.body.uid,
     });
-    console.log(userGoogle, "userGoogle");
     if (userGoogle == null) {
-      console.log('ưdesqwed')
       return res.json({
         message: "Tài khoản không tồn tại !",
         status: false,
       });
     } else {
-      console.log('vào google')
       const token = jwt.sign({ _id: userGoogle._id }, process.env.JWT_SECRET);
       res.cookie("t", token, { expire: new Date() + 9999 });
 
@@ -76,13 +70,10 @@ export const signin = async (req, res) => {
           phone: value,
         }
     );
-    console.log(user, 'user')
     function isPhoneNumber(input) {
       const phoneRegex = /^\d{10}$/;
       return phoneRegex.test(input);
     }
-    console.log(isValidEmail(value), '3edwesc')
-    console.log(user, '3ewd3ewr')
     if (isValidEmail(value) == false && isPhoneNumber(value) == false) {
       return res.json({
         message: 'Email hoặc số điện thoại không đúng định dạng !',
@@ -90,7 +81,6 @@ export const signin = async (req, res) => {
       });
     } else {
       if (user !== null) {
-        console.log('3r4reefđ')
         bcrypt.compare(password, user.hashed_password, function (error, result) {
           console.log(result, "result");
           // hàm callback được gọi khi quá trình so sánh hoàn tất

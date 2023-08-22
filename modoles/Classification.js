@@ -47,4 +47,4 @@ const Classification = new mongoose.Schema(
   },
   { timestamps: true }
 );
-module.exports = mongoose.model("classify", Classification);
+module.exports = mongoose.model("classification", Classification);

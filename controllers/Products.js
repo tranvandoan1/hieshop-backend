@@ -26,25 +26,6 @@ const drive = google.drive({
     version: 'v3',
     auth: oauth2Client
 })
-// const socketIo = require("socket.io")(http, {
-//     cors: {
-//         origin: "*",
-//     }
-// });
-// export const create = async (data) => {
-//     try {
-//         await Product.create(data.product);
-//         await Classification.create(data.classifies);
-//         Product.find((err, data) => {
-//             if (err) {
-//                 error: "Không tìm thấy sản phẩm";
-//             }
-//             return (data);
-//         });
-//     } catch (error) {
-//         return ({ error: 'Không thêm được' });
-//     }
-// };
 
 export const productById = (req, res, next, id) => {
     Product.findById(id).exec((err, product) => {
@@ -62,16 +43,38 @@ export const read = (req, res) => {
 };
 
 export const remove = async (req, res) => {
+    const { product, classify } = req.body
+    console.log(product, classify, 'product,classify')
     try {
-        await Product.findByIdAndRemove(req.params.productId);
-        await drive.files.delete({
-            fileId: req.product.image_id
+        console.log(product.image_id,'product.image_id')
+        await  drive.files.delete({
+            fileId: product.image_id
         })
+        let id = [];
+        for (let i = 0; i < classify.length; i++) {
+            id.push(ObjectID(classify[i]._id));
+            console.log(classify[i].image_id, ' classify[i].image_id')
+            await drive.files.delete({
+                fileId: classify[i].image_id
+            })
+        }
+        await Classification.deleteMany({ _id: { $in: id } });
+        console.log('xóa đucợ rồi')
+        await Product.findByIdAndRemove(product._id);
+
         Product.find((err, data) => {
             if (err) {
-                error: "Không tìm thấy sản phẩm";
+                return res.json({
+                    message: 'Không tìm thấy sản phẩm',
+                    data: data,
+                    status: true
+                });
             }
-            return res.json(data);
+            return res.json({
+                message: 'Thêm  thành công',
+                data: data,
+                status: true
+            });
         });
 
     } catch (error) {

@@ -6,7 +6,7 @@ import {
     list,
     remove,
     read,
-    update,
+    forgotPassword,
     uploadEmail,
     checkEmailUpload,
     uploadPassword,
@@ -131,6 +131,7 @@ router.get("/get-user/:userId", list);
 router.delete("/user/:userId", remove);
 
 router.post("/upload/email", uploadEmail);
+router.post("/forgot-password", forgotPassword);
 router.post("/user/upload/password", uploadPassword);
 
 // kiểm tra email thay đổi có đúng và đã tồn tại chưa

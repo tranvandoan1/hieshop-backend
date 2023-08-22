@@ -43,6 +43,7 @@ const upload = multer({ storage: storage });
 router.post("/products", upload.array("files"), async (req, res) => {
     console.log('vào')
     console.log(req.files, 'e21wdqs')
+    console.log(req.body, 'req.body')
     const fileIds = []; // Khởi tạo mảng rỗng để lưu trữ các ID file
     function uploadFile(fileMetadata, media) {
         return new Promise((resolve, reject) => {
@@ -95,6 +96,8 @@ router.post("/products", upload.array("files"), async (req, res) => {
     }
     if (fileIds.length > 0) {
         const data = JSON.parse(req.body.data);
+        console.log(data.classifies,'3ewdsewd')
+
         const product = [];
         const classifies = [];
         for (let i = 0; i < fileIds.length; i++) {
@@ -107,47 +110,48 @@ router.post("/products", upload.array("files"), async (req, res) => {
             } else {
                 classifies.push({
                     ...data.classifies[i - 1],
-                    image_id: i !== 0 && fileIds[i],
-                    photo: `https://drive.google.com/uc?export=view&id=${fileIds[i !== 0]
+                    image_id:fileIds[i],
+                    photo: `https://drive.google.com/uc?export=view&id=${fileIds[i]
                         }`,
                 })
 
             }
         }
         console.log(classifies, 'classifies')
-        // try {
-        //     await Product.create(product);
-        //     await Classification.create(classifies);
-        //     Product.find((err, data) => {
-        //         if (err) {
-        //             return res.json({
-        //                 message: 'Không tìm thấy sản phẩm',
-        //                 data: data,
-        //                 status: true
-        //             });
-        //         }
-        //         return res.json({
-        //             message: 'Thêm  thành công',
-        //             data: data,
-        //             status: true
-        //         });
-        //     });
-        // } catch (error) {
-        //     Product.find((err, data) => {
-        //         if (err) {
-        //             return res.json({
-        //                 message: 'Không tìm thấy sản phẩm',
-        //                 data: data,
-        //                 status: true
-        //             });
-        //         }
-        //         return res.json({
-        //             message: 'Không thêm được. Xin thử lại !',
-        //             data: data,
-        //             status: true
-        //         });
-        //     });
-        // }
+        console.log(product, 'product')
+        try {
+            await Product.create(product);
+            await Classification.create(classifies);
+            Product.find((err, data) => {
+                if (err) {
+                    return res.json({
+                        message: 'Không tìm thấy sản phẩm',
+                        data: data,
+                        status: true
+                    });
+                }
+                return res.json({
+                    message: 'Thêm  thành công',
+                    data: data,
+                    status: true
+                });
+            });
+        } catch (error) {
+            Product.find((err, data) => {
+                if (err) {
+                    return res.json({
+                        message: 'Không tìm thấy sản phẩm',
+                        data: data,
+                        status: true
+                    });
+                }
+                return res.json({
+                    message: 'Không thêm được. Xin thử lại !',
+                    data: data,
+                    status: true
+                });
+            });
+        }
     }
 
 });
@@ -313,8 +317,8 @@ router.get("/products/:productId", read);
 // router.get('/product/photo/:productId', readPhoto);
 
 
-router.delete("/product/:productId", remove);
-router.post("/remove-products", removes);
+router.post("/products-remove", remove);
+router.post("/products-removes", removes);
 
 router.param("productId", productById);
 

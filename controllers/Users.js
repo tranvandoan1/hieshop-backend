@@ -1,8 +1,10 @@
 import formidable from "formidable";
 import _ from "lodash";
 import User from "../modoles/Users";
+import Users from "../modoles/Users";
 const bcrypt = require("bcrypt");
-
+const nodemailer = require("nodemailer");
+const mailHost = "smtp.gmail.com";
 export const listUser = (req, res) => {
     User.find((err, data) => {
         if (err) {
@@ -146,28 +148,102 @@ export const uploadPassword = async (req, res) => {
         }
     );
 };
-async function uploadImage(file) {
-
-    const res = await axios({
-        method: 'post',
-        url: 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-        headers: {
-            Authorization: ``,
-            'Content-Type': 'multipart/related',
-        },
-        data: {
-            name: file.name,
-            parents: ['1aW53XS6u__RLk_CJN5dtHAcnB7Ss-Vzu'],
-        },
-        transformRequest: [
-            (data, headers) => {
-                const formData = new FormData();
-                formData.append('metadata', new Blob([JSON.stringify(data)], { type: 'application/json' }));
-                formData.append('file', file);
-                return formData;
-            },
-        ],
+export const forgotPassword = async (req, res) => {
+    const { value, newPassword, check } = req.body;
+    function isEmail(str) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(str);
+    }
+    const emailValide = await Users.findOne({
+        email: value,
     });
+    if (isEmail(value) == false) {
+        return res.json({
+            message: "Email không đúng định dạng !",
+            status: false,
+        });
+    } else if (emailValide == null) {
+        return res.json({
+            message: "Email không tồn tại !",
+            status: false,
+        });
+    } else {
+        if (check == 1) {
+            try {
+                let transporter = nodemailer.createTransport({
+                    host: mailHost,
+                    service: "gmail",
+                    port: 587,
+                    secure: false, // true for 465, false for other ports
+                    auth: {
+                        user: process.env.USER_EMAIL,
+                        pass: process.env.PASS_EMAIL,
+                    },
+                    tls: {
+                        rejectUnauthorized: true,
+                    },
+                });
+                let otp = Math.floor(Math.random() * Math.pow(10, 6))
+                    .toString()
+                    .padStart(6, "0");
+                // setup email data with unicode symbols
+                let mailOptions = {
+                    // from: '"Phòng QHDN" <foo@example.com>',
+                    from: "OTP <your_email@gmail.com>", // sender address
+                    to: value, // list of receivers
+                    subject: "Thông báo", // Subject line
+                    html: `<div style="color: black;font-size: 16px;">Mã OTP của bạn là</div> <div style="color: red;font-size: 30px;margin: 20px 0">${otp}</div> <div style="color: red;font-size: 14px;font-weight: 700;">Không chuyển tiếp hoặc cung cấp mã này cho bất kỳ ai.</div> `, // plain text body
+                };
 
-    return `https://drive.google.com/uc?id=${res.data.id}`;
+                transporter.sendMail(mailOptions, (error, info) => {
+                    if (error) {
+                        return res.json({
+                            message: "Lỗi không gửi được",
+                            status: false,
+                        });
+                    }
+                    return res.json({
+                        message: "Otp đã được gửi đến email",
+                        status: true,
+                        otp: otp,
+                    });
+                });
+            } catch (error) {
+                return res.status(400).json("Lỗi. Xin thực hiện lại !");
+            }
+        } else {
+            const saltRounds = 10; // số lần lặp lại để tạo salt
+            bcrypt.hash(newPassword, saltRounds, async function (err, password) {
+                // hàm callback được gọi khi quá trình mã hóa hoàn tất
+                if (err) {
+                    return res.json({
+                        message: "Lỗi không thực hiện thay đổi được !",
+                        status: false,
+                    });
+                } else {
+                    await User.updateMany(
+                        {
+                            _id: { $in: emailValide._id },
+                        },
+                        {
+                            $set: {
+                                hashed_password: password
+                            },
+                        }
+                    );
+
+                    return res.json({
+                        message: "Mật khẩu đã được cập nhật !",
+                        status: true,
+                    });
+                }
+            });
+        }
+
+    }
+
+
+
+
+
 }

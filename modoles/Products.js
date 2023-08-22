@@ -60,6 +60,10 @@ const productSchema = new mongoose.Schema(
     name_commodityvalue: {
       type: String,
     },
+    valueClassify: {
+      type: String,
+
+    }
   },
   { timestamps: true }
 );
