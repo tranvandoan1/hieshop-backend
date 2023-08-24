@@ -25,7 +25,12 @@ import CommodityValueRoutues from "./routes/CommodityValue";
 import ShopOwnerRoutes from "./routes/ShopOwner";
 import ImageProRoutes from "./routes/ImagePro";
 import PushOtpEmail from "./routes/PushOtpEmail";
-
+const cloudinary = require("cloudinary").v2;
+cloudinary.config({
+  cloud_name: "ddnkbpdzs",
+  api_key: "665144417678677",
+  api_secret: "qKRYqgMn8iBBpb77LU4dxm1HpVQ",
+});
 const app = express();
 
 dotenv.config();

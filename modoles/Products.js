@@ -20,9 +20,11 @@ const productSchema = new mongoose.Schema(
     },
     view: {
       type: Number,
+      default: 0
     },
     review: {
       type: Number,
+      default: 0
     },
 
     sold: {

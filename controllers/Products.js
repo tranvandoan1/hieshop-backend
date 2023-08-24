@@ -1,32 +1,120 @@
 import Product from "../modoles/Products";
 import Classification from "../modoles/Classification";
-import Saveoder from "../modoles/SaveOder";
-import express from "express";
-
-const app = express();
-const nodemailer = require('nodemailer');
-const http = require('http').createServer(app);
+const cloudinary = require("cloudinary").v2;
 
 import formidable from "formidable";
-import _, { filter } from "lodash";
+import _ from "lodash";
 import { ObjectID } from "mongodb";
-import { google } from "googleapis";
-import fs from 'fs'
-import path from "path";
-import axios from "axios";
-const CLIENT_ID = process.env.CLIENT_ID
-const CLIENT_SECRET = process.env.CLIENT_SECRET
-const REFRESH_TOKEN = process.env.REFRESH_TOKEN
-const REQUEST_URI = process.env.REQUEST_URI
 
+export const create = async (req, res) => {
+    function uploadFile(fileMetadata, media) {
+        return new Promise((resolve, reject) => {
+            cloudinary.uploader.upload(
+                fileMetadata,
+                { folder: "products" },
+                async function (error, result) {
+                    if (error) {
+                        Product.find((err, data) => {
+                            if (err) {
+                                return res.json({
+                                    message: "Không tìm thấy sản phẩm",
+                                    data: data,
+                                    status: true,
+                                });
+                            }
+                            return res.json({
+                                message: "Không thêm được ảnh. Xin thử lại !",
+                                data: data,
+                                status: true,
+                            });
+                        });
+                    } else {
+                        resolve({
+                            image_id: result.public_id,
+                            photo: result.url,
+                        }); // Trả về ID file
+                    }
+                }
+            );
+        });
+    }
+    const fileIds = [];
+    for (let i = 0; i < req.files.length; i++) {
+        try {
+            const fileId = await uploadFile(req.files[i].path);
+            fileIds.push(fileId); // Thêm ID file vào mảng
+        } catch (err) {
+            Product.find((err, data) => {
+                if (err) {
+                    return res.json({
+                        message: "Không tìm thấy sản phẩm",
+                        data: data,
+                        status: true,
+                    });
+                }
+                return res.json({
+                    message: "Không thêm được ảnh. Xin thử lại !",
+                    data: data,
+                    status: true,
+                });
+            });
+        }
+    }
+    if (fileIds.length > 0) {
+        const data = JSON.parse(req.body.data);
 
-const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REQUEST_URI)
-oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN })
-const drive = google.drive({
-    version: 'v3',
-    auth: oauth2Client
-})
-
+        const product = [];
+        const classifies = [];
+        for (let i = 0; i < fileIds.length; i++) {
+            if (i == 0) {
+                product.push({
+                    ...data.product,
+                    photo: fileIds[0].photo,
+                    image_id: fileIds[0].image_id,
+                });
+            } else {
+                classifies.push({
+                    ...data.classifies[i - 1],
+                    photo: fileIds[i].photo,
+                    image_id: fileIds[i].image_id,
+                });
+            }
+        }
+        try {
+            await Product.create(product);
+            await Classification.create(classifies);
+            Product.find((err, data) => {
+                if (err) {
+                    return res.json({
+                        message: "Không tìm thấy sản phẩm",
+                        data: data,
+                        status: true,
+                    });
+                }
+                return res.json({
+                    message: "Thêm  thành công",
+                    data: data,
+                    status: true,
+                });
+            });
+        } catch (error) {
+            Product.find((err, data) => {
+                if (err) {
+                    return res.json({
+                        message: "Không tìm thấy sản phẩm",
+                        data: data,
+                        status: true,
+                    });
+                }
+                return res.json({
+                    message: "Không thêm được. Xin thử lại !",
+                    data: data,
+                    status: true,
+                });
+            });
+        }
+    }
+};
 export const productById = (req, res, next, id) => {
     Product.findById(id).exec((err, product) => {
         if (err || !product) {
@@ -43,40 +131,31 @@ export const read = (req, res) => {
 };
 
 export const remove = async (req, res) => {
-    const { product, classify } = req.body
-    console.log(product, classify, 'product,classify')
+    const { product, classify } = req.body;
     try {
-        console.log(product.image_id,'product.image_id')
-        await  drive.files.delete({
-            fileId: product.image_id
-        })
+        cloudinary.uploader.destroy(product.image_id);
         let id = [];
         for (let i = 0; i < classify.length; i++) {
             id.push(ObjectID(classify[i]._id));
-            console.log(classify[i].image_id, ' classify[i].image_id')
-            await drive.files.delete({
-                fileId: classify[i].image_id
-            })
+            cloudinary.uploader.destroy(classify[i].image_id);
         }
         await Classification.deleteMany({ _id: { $in: id } });
-        console.log('xóa đucợ rồi')
         await Product.findByIdAndRemove(product._id);
 
         Product.find((err, data) => {
             if (err) {
                 return res.json({
-                    message: 'Không tìm thấy sản phẩm',
+                    message: "Không tìm thấy sản phẩm",
                     data: data,
-                    status: true
+                    status: true,
                 });
             }
             return res.json({
-                message: 'Thêm  thành công',
+                message: "Thêm  thành công",
                 data: data,
-                status: true
+                status: true,
             });
         });
-
     } catch (error) {
         return res.status(400).json(error);
     }
@@ -97,22 +176,21 @@ export const removes = async (req, res) => {
     } catch (error) {
         return res.status(400).json(error);
     }
-
 };
 
 export const list = (req, res) => {
     Product.find((err, data) => {
         if (err) {
             return res.json({
-                message: 'Không tìm thấy sản phẩm',
+                message: "Không tìm thấy sản phẩm",
                 data: data,
-                status: true
+                status: true,
             });
         }
         return res.json({
-            message: 'Thêm  thành công',
+            message: "Thêm  thành công",
             data: data,
-            status: true
+            status: true,
         });
     });
 };
@@ -134,4 +212,3 @@ export const update = (req, res) => {
         });
     });
 };
-

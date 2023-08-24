@@ -1,38 +1,179 @@
 import User from "../modoles/Users";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { userSignupValidator } from "../validator";
-const crypto = require("crypto");
+import Users from "../modoles/Users";
 dotenv.config();
 const expressJwt = require("express-jwt");
 const bcrypt = require("bcrypt");
+const cloudinary = require("cloudinary").v2;
+const nodemailer = require("nodemailer");
+const mailHost = "smtp.gmail.com";
 
-export const signup = (req, res) => {
-  const saltRounds = 10; // số lần lặp lại để tạo salt
-  bcrypt.hash(req.body.password, saltRounds, function (err, password) {
-    // hàm callback được gọi khi quá trình mã hóa hoàn tất
-    if (err) {
-      return res.json(err);
-    } else {
-      const newUser = {
-        name: req.body.name,
-        email: req.body.email,
-        hashed_password: password,
-        avatar: req.body.avatar,
-        phone: req.body.phone,
-      };
-      const user = new User(newUser);
-      user.save((error, user) => {
-        if (error) {
-          return res.status(400).json({
-            error: "Không thêm được",
+export const signup = async (req, res) => {
+  function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+  function isPhoneNumber(input) {
+    const phoneRegex = /^\d{10}$/;
+    return phoneRegex.test(input);
+  }
+
+  const email = await Users.findOne({
+    email: req.body.email,
+  });
+  const phone = await Users.findOne({
+    phone: req.body.phone,
+  });
+
+  if (phone !== null) {
+    return res.json({
+      message: "Số điện thoại đã được sử dụng !",
+      status: false,
+      data: undefined,
+    });
+  } else if (email !== null) {
+    return res.json({
+      message: "Email đã được sử dụng !",
+      status: false,
+      data: undefined,
+    });
+  } else if (isValidEmail(req.body.email) == false) {
+    return res.json({
+      message: "Email không đúng định dạng !",
+      status: false,
+      data: undefined,
+    });
+  } else if ((isPhoneNumber(req.body.phone) == req.body.google)) {
+    return res.json({
+      message: "Số điện thoại không đúng định dạng !",
+      status: false,
+      data: undefined,
+    });
+  } else {
+    if (req.body.otp == 1) {
+      try {
+      let transporter = nodemailer.createTransport({
+          host: mailHost,
+          service: "gmail",
+          port: 587,
+          secure: false, // true for 465, false for other ports
+          auth: {
+            user: process.env.USER_EMAIL,
+            pass: process.env.PASS_EMAIL,
+          },
+          tls: {
+            rejectUnauthorized: true,
+          },
+        });
+        let otp = Math.floor(Math.random() * Math.pow(10, 6))
+          .toString()
+          .padStart(6, "0");
+        // setup email data with unicode symbols
+        let mailOptions = {
+          // from: '"Phòng QHDN" <foo@example.com>',
+          from: "OTP <your_email@gmail.com>", // sender address
+          to: req.body.email, // list of receivers
+          subject: "Thông báo", // Subject line
+          html: `<div style="color: black;font-size: 16px;">Mã OTP của bạn là</div> <div style="color: red;font-size: 30px;margin: 20px 0">${otp}</div> <div style="color: red;font-size: 14px;font-weight: 700;">Không chuyển tiếp hoặc cung cấp mã này cho bất kỳ ai.</div> `, // plain text body
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            return res.json({
+              message: "Lỗi không gửi được",
+              status: false,
+            });
+          }
+          return res.json({
+            message: "Otp đã được gửi đến email",
+            status: true,
+            otp: otp,
           });
+        });
+      } catch (error) {
+        return res.status(400).json("Lỗi. Xin thực hiện lại !");
+      }
+    } else {
+      bcrypt.hash(req.body.password, 10, async function (err, password) {
+        // hàm callback được gọi khi quá trình mã hóa hoàn tất
+        if (err) {
+          return res.json({
+            message: "Lỗi không đăng ký được",
+            status: false,
+            data: undefined,
+          });
+        } else {
+          if (req.file !== undefined) {
+            try {
+              cloudinary.uploader.upload(
+                req.file.path,
+                { folder: "categories" },
+                async function (error, result) {
+                  const newUser = {
+                    name: req.body.name,
+                    email: req.body.email,
+                    hashed_password: password,
+                    avatar: result.url,
+                    phone: req.body.phone,
+                    image_id: result.public_id,
+                  };
+                  const user = new Users(newUser);
+                  user.save((error, user) => {
+                    if (error) {
+                      return res.status(400).json({
+                        error: "Không thêm được",
+                        data: undefined,
+                        status: false,
+                      });
+                    }
+                    return res.json({
+                      message: "Đăng ký thành công",
+                      status: true,
+                      data: user,
+                    });
+                  });
+
+
+                })
+            } catch (err) {
+              return res.json({
+                message: "Lỗi không đăng ký được",
+                status: false,
+                data: undefined,
+              });
+            }
+          } else {
+            const newUser = {
+              name: req.body.name,
+              email: req.body.email,
+              hashed_password: password,
+              avatar: req.body.avatar,
+              phone: req.body.phone,
+              uid: req.body.uid,
+              image_id: 1,
+            };
+            const user = new Users(newUser);
+            user.save((error, user) => {
+              if (error) {
+                return res.status(400).json({
+                  error: "Không thêm được",
+                  data: undefined,
+                  status: false,
+                });
+              }
+              return res.json({
+                message: "Đăng ký thành công",
+                status: true,
+                data: user,
+              });
+            });
+          }
         }
-        return res.json(user);
       });
     }
-  });
-};
+  }
+}
 export const signin = async (req, res) => {
   if (req.body.select == "google") {
     const userGoogle = await User.findOne({
@@ -82,7 +223,6 @@ export const signin = async (req, res) => {
     } else {
       if (user !== null) {
         bcrypt.compare(password, user.hashed_password, function (error, result) {
-          console.log(result, "result");
           // hàm callback được gọi khi quá trình so sánh hoàn tất
           if (error) {
             return res.json({
