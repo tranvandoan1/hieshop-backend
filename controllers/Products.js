@@ -194,21 +194,182 @@ export const list = (req, res) => {
         });
     });
 };
+export const update = async (req, res) => {
+    const { newProduct, newClassifies, product, classifies } = JSON.parse(
+        req.body.data
+    );
 
-export const update = (req, res) => {
-    let form = new formidable.IncomingForm();
-    form.keepExtensions = true;
-    form.parse(req, (err, fields, files) => {
-        let product = req.product;
-        product = _.assignIn(product, fields);
+    const newClassifiesImage = newClassifies.filter(
+        (item) => item.file !== undefined
+    );
 
-        product.save((err, data) => {
-            if (err) {
-                res.status(400).json({
-                    error: "Không sửa được sản phẩm",
+    function uploadFile(fileMetadata, media) {
+        return new Promise((resolve, reject) => {
+            cloudinary.uploader.upload(
+                fileMetadata,
+                { folder: "products" },
+                async function (error, result) {
+                    if (error) {
+                        Product.find((err, data) => {
+                            if (err) {
+                                return res.json({
+                                    message: "Không tìm thấy sản phẩm",
+                                    data: data,
+                                    status: true,
+                                });
+                            }
+                            return res.json({
+                                message: "Không thêm được ảnh. Xin thử lại !",
+                                data: data,
+                                status: true,
+                            });
+                        });
+                    } else {
+                        resolve({
+                            image_id: result.public_id,
+                            photo: result.url,
+                        }); // Trả về ID file
+                    }
+                }
+            );
+        });
+    }
+    const fileIds = [];
+    for (let i = 0; i < req.files.length; i++) {
+        try {
+            const fileId = await uploadFile(req.files[i].path);
+            fileIds.push(fileId); // Thêm ID file vào mảng
+        } catch (err) {
+            Product.find((err, data) => {
+                if (err) {
+                    return res.json({
+                        message: "Không tìm thấy sản phẩm",
+                        data: data,
+                        status: true,
+                    });
+                }
+                return res.json({
+                    message: "Không thêm được ảnh. Xin thử lại !",
+                    data: data,
+                    status: true,
+                });
+            });
+        }
+    }
+    if (fileIds.length > 0) {
+        try {
+
+            const productNew = [];
+            const classifiesNew = [];
+            for (let i = 0; i < fileIds.length; i++) {
+                if (newProduct.file.stauts == false) {
+                    classifiesNew.push({
+                        ...newClassifiesImage[i],
+                        photo: fileIds[i].photo,
+                        image_id: fileIds[i].image_id,
+                    });
+                } else {
+                    if (i == 0) {
+                        productNew.push({
+                            ...newProduct,
+                            photo: fileIds[0].photo,
+                            image_id: fileIds[0].image_id,
+                        });
+                    } else {
+                        classifiesNew.push({
+                            ...newClassifiesImage[i - 1],
+                            photo: fileIds[i].photo,
+                            image_id: fileIds[i].image_id,
+                        });
+                    }
+                }
+            }
+
+            // upload giá trị mới của giá trị phân loại
+            for (let i = 0; i < newClassifies.length; i++) {
+                for (let j = 0; j < classifiesNew.length; j++) {
+                    if (newClassifies[i]._id == classifiesNew[j]._id) {
+                        newClassifies[i] = classifiesNew[j];
+                    }
+                }
+            }
+            const classifiesRemove = classifies.filter(
+                (obj1) => !newClassifies.some((obj2) => obj1._id === obj2._id)
+            );
+            const classifiesAdd = newClassifies.filter(
+                (obj1) => !classifies.some((obj2) => obj1._id === obj2._id)
+            );
+            const classifiesUpload = newClassifies.filter((obj1) =>
+                classifies.some((obj2) => obj1._id === obj2._id)
+            );
+            const newclassifiesAdd = [];
+            classifiesAdd.map((item) => {
+                newclassifiesAdd.push({
+                    photo: item.photo,
+                    image_id: item.image_id,
+                    values: item.values,
+                    price: item.price,
+                    quantity: item.quantity,
+                    name: item.name,
+                    linked: product.linked,
+                });
+            });
+            const { file, ...newDataPro } = productNew[0];
+            console.log(newDataPro, 'newDataPro')
+            await Classification.create(newclassifiesAdd);
+            for (let i = 0; i < classifiesRemove.length; i++) {
+                cloudinary.uploader.destroy(classifiesRemove[i].image_id);
+                await Classification.deleteMany({
+                    _id: { $in: ObjectID(classifiesRemove[i]._id) },
                 });
             }
-            res.json(data);
-        });
-    });
+            for (let i = 0; i < classifiesUpload.length; i++) {
+                await Classification.updateMany(
+                    {
+                        _id: { $in: classifiesUpload[i]._id },
+                    },
+                    {
+                        $set: classifiesUpload[i],
+                    }
+                );
+            }
+            await Product.updateMany(
+                {
+                    _id: { $in: newDataPro._id },
+                },
+                {
+                    $set: newDataPro,
+                }
+            );
+            Product.find((err, data) => {
+                if (err) {
+                    return res.json({
+                        message: "Không tìm thấy sản phẩm",
+                        data: data,
+                        status: true,
+                    });
+                }
+                return res.json({
+                    message: "Thêm  thành công",
+                    data: data,
+                    status: true,
+                });
+            });
+        } catch (error) {
+            Product.find((err, data) => {
+                if (err) {
+                    return res.json({
+                        message: "Không tìm thấy sản phẩm",
+                        data: data,
+                        status: true,
+                    });
+                }
+                return res.json({
+                    message: "Không thêm được. Xin thử lại !",
+                    data: data,
+                    status: true,
+                });
+            });
+        }
+    }
 };
