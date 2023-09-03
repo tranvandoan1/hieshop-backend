@@ -11,9 +11,9 @@ const productSchema = new mongoose.Schema(
       ref: "categories",
     },
 
-    user_id: {
-      type: ObjectId,
-      ref: "user",
+    code_shop: {
+      type: String,
+
     },
     photo: {
       type: String,
@@ -38,18 +38,18 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
-    origin: {
-      type: String,
-    },
-    trademark: {
-      type: String,
-    },
-    warehouse: {
-      type: String,
-    },
-    sent_from: {
-      type: String,
-    },
+    // origin: {
+    //   type: String,
+    // },
+    // trademark: {
+    //   type: String,
+    // },
+    // warehouse: {
+    //   type: String,
+    // },
+    // sent_from: {
+    //   type: String,
+    // },
     linked: {
       type: String,
     },
@@ -60,7 +60,8 @@ const productSchema = new mongoose.Schema(
       type: String,
     },
     name_commodityvalue: {
-      type: String,
+      type: String || undefined,
+      default: undefined
     },
     valueClassify: {
       type: String,

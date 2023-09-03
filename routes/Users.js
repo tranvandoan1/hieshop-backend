@@ -10,6 +10,8 @@ import {
     uploadEmail,
     checkEmailUpload,
     uploadPassword,
+    listAll,
+    update
 } from "../controllers/Users";
 import { requireSignin, isAdmin, isAuth } from "../controllers/Auth";
 import { isAuthenticateUser } from "../middlewares/CheckAuth";
@@ -45,88 +47,10 @@ router.get("/secret/:userId", requireSignin, isAuth, isAdmin, (req, res) => {
         user: req.profile,
     });
 });
-// router.get('/get-user/:userId', isAuthenticateUser, listUser)
 router.get("/user/:userId", read);
+router.get("/get-user-all", listAll);
 const upload = multer({ storage: storage });
-router.post("/upload-user", upload.single("files"), async (req, res) => {
-    const fileIds = []; // Khởi tạo mảng rỗng để lưu trữ các ID file
-    if (req.file !== undefined) {
-        function uploadFile(fileMetadata, media) {
-            return new Promise((resolve, reject) => {
-                drive.files.create(
-                    {
-                        resource: fileMetadata,
-                        media: media,
-                        fields: "id",
-                    },
-                    (err, file) => {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve(file.data.id); // Trả về ID file
-                        }
-                    }
-                );
-            });
-        }
-
-        const fileMetadata = {
-            name: req.file.originalname,
-            parents: ["1FZEPgDbFpqLjI-lzLtsL-om92FoXCG3z"],
-        };
-
-        const media = {
-            mimeType: req.file.mimetype,
-            body: fs.createReadStream(req.file.path),
-        };
-
-        try {
-            const fileId = await uploadFile(fileMetadata, media);
-            fileIds.push(fileId); // Thêm ID file vào mảng
-            await drive.files.delete({
-                fileId: req.body.image_id
-            })
-        } catch (err) {
-            console.error(err);
-        }
-    }
-
-    if (fileIds.length > 0 || req.body.name || req.body.name == undefined) {
-        console.log("3e2wrew");
-        try {
-            await User.updateMany(
-                {
-                    _id: { $in: req.body._id },
-                },
-                {
-                    $set:
-                        req.body.name && fileIds.length <= 0
-                            ? {
-                                name: req.body.name,
-                            }
-                            : req.body.name && fileIds.length > 0
-                                ? {
-                                    avatar: `https://drive.google.com/uc?export=view&id=${fileIds[0]}`,
-                                    image_id: fileIds[0],
-                                    name: req.body.name,
-                                }
-                                : {
-                                    avatar: `https://drive.google.com/uc?export=view&id=${fileIds[0]}`,
-                                    image_id: fileIds[0],
-                                },
-                }
-            );
-
-            const user = await User.findOne({
-                _id: req.body._id,
-            });
-
-            return res.json(user);
-        } catch (err) {
-            console.error(err);
-        }
-    }
-});
+router.post("/upload-user", upload.array("files"),update );
 router.get("/get-user/:userId", list);
 router.delete("/user/:userId", remove);
 

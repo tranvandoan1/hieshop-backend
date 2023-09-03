@@ -8,12 +8,24 @@ export const create = async (req, res) => {
     await Saveoder.create(req.body);
     Saveoder.find((err, data) => {
       if (err) {
-        error: "Không tìm thấy sản phẩm";
+        return res.json({
+          message: "Không tìm thấy sản phẩm",
+          data: 'data',
+          status: true,
+        });
       }
-      return res.json(data);
+      return res.json({
+        message: "Lấy dữ liệu thành công",
+        data: data,
+        status: true,
+      });
     });
   } catch (error) {
-    return res.status(400).json(error);
+    return res.json({
+      message: "Lấy dữ liệu không thành công",
+      data: [],
+      status: true,
+    });
   }
 
 };
@@ -33,15 +45,22 @@ export const read = (req, res) => {
   return res.json(req.saveoder);
 };
 
-export const remove =async (req, res) => {
-  let saveoder = req.saveoder;
-  console.log(saveoder,'saveoder')
-  // await Product.findByIdAndRemove(req.params.productId);
-  // Saveoder.find((err, dataAll) => {
-  //   console.log(dataAll.length, "sau");
-
-  //   return res.json(dataAll);
-  // });
+export const remove = async (req, res) => {
+  await Saveoder.findByIdAndRemove(req.body._id);
+  Saveoder.find((err, data) => {
+    if (err) {
+      return res.json({
+        message: "Không tìm thấy sản phẩm",
+        data: 'data',
+        status: true,
+      });
+    }
+    return res.json({
+      message: "Cập nhât thành công",
+      data: data,
+      status: true,
+    });
+  });
 };
 export const removes = async (req, res) => {
   try {
@@ -86,11 +105,19 @@ export const update = async (req, res) => {
       }
     );
 
-    Saveoder.find((err, dataAll) => {
+    Saveoder.find((err, data) => {
       if (err) {
-        error: "Không tìm thấy sp oder";
+        return res.json({
+          message: "Không tìm thấy sản phẩm",
+          data: 'data',
+          status: true,
+        });
       }
-      return res.json(dataAll);
+      return res.json({
+        message: "Cập nhât thành công",
+        data: data,
+        status: true,
+      });
     });
   } catch (error) {
     return res.status(400).json(error);

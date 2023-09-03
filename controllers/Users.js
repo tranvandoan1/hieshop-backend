@@ -5,21 +5,35 @@ import Users from "../modoles/Users";
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const mailHost = "smtp.gmail.com";
-export const listUser = (req, res) => {
-    User.find((err, data) => {
-        if (err) {
-            res.status(400).json({
-                err: " Không có tài khoản nào !",
-            });
-        }
-        res.json(data);
-    });
-};
+const cloudinary = require("cloudinary").v2;
+
 export const list = async (req, res) => {
+    console.log('vào nè vào nè')
     const user = await User.findOne({
         _id: req.params.userId,
     });
-    return res.json(user);
+    return res.json({
+        message: "Lấy dữ liệu thành công",
+        status: false,
+        data: user,
+    });
+};
+export const listAll = async (req, res) => {
+    console.log('chàoas')
+    User.find((err, data) => {
+        if (err) {
+            return res.json({
+                message: "Không lấy được dữ liệu",
+                status: false,
+                data: [],
+            });
+        }
+        return res.json({
+            message: "Lấy dữ liệu thành công",
+            status: false,
+            data: data,
+        });
+    });
 };
 export const userById = (req, res, next, id) => {
     User.findById(id).exec((error, user) => {
@@ -39,18 +53,183 @@ export const read = (req, res) => {
     return res.json(req.profile);
 };
 export const update = async (req, res) => {
-    await User.updateMany(
-        {
-            _id: { $in: req.body._id },
-        },
-        {
-            $set: req.body,
-        }
-    );
+    const fileIds = [];
+    function isPhoneNumber(input) {
+        const phoneRegex = /^\d{10}$/;
+        return phoneRegex.test(input);
+    }
+
+    const phone = await Users.findOne({
+        phone: req.body.phone,
+    });
     const user = await User.findOne({
         _id: req.body._id,
+
     });
-    return res.json(user);
+    // console.log(isPhoneNumber(req.body.phone), 'isPhoneNumber(req.body.phone)')
+    // console.log(phone, 'phone')
+    // if (phone !== null && req.body.phone !== undefined) {
+
+    //     return res.json({
+    //         message: "Số điện thoại đã được sử dụng !",
+    //         status: false,
+    //         data: user,
+    //     });
+    // } else 
+    if (isPhoneNumber(req.body.phone) == false) {
+        return res.json({
+            message: "Số điện thoại không đúng định dạng !",
+            status: false,
+            data: user,
+        });
+    } else {
+        if (req.files.length > 0) {
+            function uploadFile(fileMetadata, media) {
+                return new Promise((resolve, reject) => {
+                    cloudinary.uploader.upload(
+                        fileMetadata,
+                        { folder: "products" },
+                        async function (error, result) {
+                            if (error) {
+                                Product.find((err, data) => {
+                                    if (err) {
+                                        return res.json({
+                                            message: "Không tìm thấy sản phẩm",
+                                            data: data,
+                                            status: true,
+                                        });
+                                    }
+                                    return res.json({
+                                        message: "Không thêm được ảnh. Xin thử lại !",
+                                        data: data,
+                                        status: true,
+                                    });
+                                });
+                            } else {
+                                resolve({
+                                    image_id: result.public_id,
+                                    photo: result.url,
+                                }); // Trả về ID file
+                            }
+                        }
+                    );
+                });
+            }
+            for (let i = 0; i < req.files.length; i++) {
+                try {
+                    const fileId = await uploadFile(req.files[i].path);
+                    fileIds.push(fileId); // Thêm ID file vào mảng
+                } catch (err) {
+                    const user = await User.findOne({
+                        _id: req.body._id,
+                    });
+                    return res.json({
+                        message: "Không tìm thấy sản phẩm",
+                        status: false,
+                        data: user,
+                    });
+                }
+            }
+        }
+
+        if (fileIds.length > 0) {
+            try {
+                await User.updateMany(
+                    {
+                        _id: { $in: req.body._id },
+                    },
+                    {
+                        $set:
+                            req.body.check == 0
+                                ? {
+                                    logo: user.logo,
+                                    logo_id: user.logo_id,
+                                    avatar: user.avatar,
+                                    image_id: user.image_id,
+                                    phone: req.body.phone,
+                                    email: req.body.email,
+                                    name: req.body.name,
+                                }
+                                : req.body.check == 1
+                                    ? {
+                                        logo: user.logo,
+                                        logo_id: user.logo_id,
+                                        avatar: fileIds[0].photo,
+                                        image_id: fileIds[0].image_id,
+                                        phone: req.body.phone,
+                                        email: req.body.email,
+                                        name: req.body.name,
+                                    }
+                                    : req.body.check == 2
+                                        ? {
+                                            logo: fileIds[0].photo,
+                                            logo_id: fileIds[0].image_id,
+                                            avatar: user.avatar,
+                                            image_id: user.image_id,
+                                            phone: req.body.phone,
+                                            email: req.body.email,
+                                            name: req.body.name,
+                                        }
+                                        : {
+                                            logo: fileIds[req.body.imageUrlLogo == true ? 0 : 1].photo,
+                                            logo_id:
+                                                fileIds[req.body.imageUrlLogo == true ? 0 : 1].image_id,
+                                            avatar:
+                                                fileIds[req.body.imageUrlLogo == true ? 1 : 0].photo,
+                                            image_id:
+                                                fileIds[req.body.imageUrlLogo == true ? 1 : 0].image_id,
+                                            phone: req.body.phone,
+                                            email: req.body.email,
+                                            name: req.body.name,
+                                        },
+                    }
+                );
+                const userNew = await User.findOne({
+                    _id: req.body._id,
+                });
+                return res.json({
+                    message: "Sửa thành công",
+                    status: true,
+                    data: userNew,
+                });
+            } catch (err) {
+                return res.json({
+                    message: "Lỗi không thêm được !",
+                    status: false,
+                    data: undefined,
+                });
+            }
+        } else {
+            try {
+                await User.updateMany(
+                    {
+                        _id: { $in: req.body._id },
+                    },
+                    {
+                        $set: {
+                            phone: req.body.phone,
+                            email: req.body.email,
+                            name: req.body.name,
+                        },
+                    }
+                );
+                const user = await User.findOne({
+                    _id: req.body._id,
+                });
+                return res.json({
+                    message: "Sửa thành công",
+                    status: true,
+                    data: user,
+                });
+            } catch (err) {
+                return res.json({
+                    message: "Lỗi không thêm được !",
+                    status: false,
+                    data: undefined,
+                });
+            }
+        }
+    }
 };
 
 export const remove = (req, res) => {
@@ -74,14 +253,13 @@ export const checkEmailUpload = async (req, res, text) => {
             email: email,
         });
         if (user) {
-            return res.json({ notification: 'Email đã sử dụng', status: true });
+            return res.json({ notification: "Email đã sử dụng", status: true });
         } else {
-            return res.json({ notification: 'Email hợp lệ', status: false });
-
+            return res.json({ notification: "Email hợp lệ", status: false });
         }
     } catch (error) {
         return res.status(400).json({
-            error: 'Lỗi. Hãy thử lại'
+            error: "Lỗi. Hãy thử lại",
         });
     }
 };
@@ -101,9 +279,7 @@ export const uploadEmail = async (req, res) => {
         _id: req.body._id,
     });
     return res.json(user);
-
-
-}
+};
 export const uploadPassword = async (req, res) => {
     const { _id, current_password, newPassword, confirm } = req.body;
     const user = await User.findOne({
@@ -130,13 +306,13 @@ export const uploadPassword = async (req, res) => {
                             },
                             {
                                 $set: {
-                                    hashed_password: password
+                                    hashed_password: password,
                                 },
                             }
                         );
 
                         return res.json({
-                            susssuc: 'Cập nhật thành công'
+                            susssuc: "Cập nhật thành công",
                         });
                     }
                 });
@@ -227,7 +403,7 @@ export const forgotPassword = async (req, res) => {
                         },
                         {
                             $set: {
-                                hashed_password: password
+                                hashed_password: password,
                             },
                         }
                     );
@@ -239,11 +415,5 @@ export const forgotPassword = async (req, res) => {
                 }
             });
         }
-
     }
-
-
-
-
-
-}
+};

@@ -39,10 +39,19 @@ const userSchema = new mongoose.Schema(
     image_id: {
       type: String,
     },
+    code: {
+      type: String,
+    },
     uid: {
       type: String,
       default:undefined
-    }
+    },
+    logo: {
+      type: String,
+    },
+    logo_id: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

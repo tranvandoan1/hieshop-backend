@@ -12,7 +12,7 @@ import {
 } from "../controllers/SaveOder";
 const router = express.Router();
 
-router.post("/saveoders", create);
+router.post("/saveoder-add", create);
 router.get("/saveoders", list);
 router.get("/saveoders/:id", read);
 
@@ -21,7 +21,7 @@ router.post("/upload-saveoderCart", updateProOrder);
 router.patch("/saveoders/check", uploadSaveOrders);
 router.post('/removes-saveoders', removes);
 
-router.delete("/saveoders/:id", remove);
+router.post("/saveoder-order", remove);
 
 router.param("id", saveoderId);
 

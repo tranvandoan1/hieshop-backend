@@ -195,6 +195,7 @@ export const list = (req, res) => {
     });
 };
 export const update = async (req, res) => {
+    console.log("vào nhé");
     const { newProduct, newClassifies, product, classifies } = JSON.parse(
         req.body.data
     );
@@ -203,62 +204,63 @@ export const update = async (req, res) => {
         (item) => item.file !== undefined
     );
 
-    function uploadFile(fileMetadata, media) {
-        return new Promise((resolve, reject) => {
-            cloudinary.uploader.upload(
-                fileMetadata,
-                { folder: "products" },
-                async function (error, result) {
-                    if (error) {
-                        Product.find((err, data) => {
-                            if (err) {
+    const fileIds = [];
+    if (req.files.length > 0) {
+        function uploadFile(fileMetadata, media) {
+            return new Promise((resolve, reject) => {
+                cloudinary.uploader.upload(
+                    fileMetadata,
+                    { folder: "products" },
+                    async function (error, result) {
+                        if (error) {
+                            Product.find((err, data) => {
+                                if (err) {
+                                    return res.json({
+                                        message: "Không tìm thấy sản phẩm",
+                                        data: data,
+                                        status: true,
+                                    });
+                                }
                                 return res.json({
-                                    message: "Không tìm thấy sản phẩm",
+                                    message: "Không thêm được ảnh. Xin thử lại !",
                                     data: data,
                                     status: true,
                                 });
-                            }
-                            return res.json({
-                                message: "Không thêm được ảnh. Xin thử lại !",
-                                data: data,
-                                status: true,
                             });
-                        });
-                    } else {
-                        resolve({
-                            image_id: result.public_id,
-                            photo: result.url,
-                        }); // Trả về ID file
+                        } else {
+                            resolve({
+                                image_id: result.public_id,
+                                photo: result.url,
+                            }); // Trả về ID file
+                        }
                     }
-                }
-            );
-        });
-    }
-    const fileIds = [];
-    for (let i = 0; i < req.files.length; i++) {
-        try {
-            const fileId = await uploadFile(req.files[i].path);
-            fileIds.push(fileId); // Thêm ID file vào mảng
-        } catch (err) {
-            Product.find((err, data) => {
-                if (err) {
+                );
+            });
+        }
+        for (let i = 0; i < req.files.length; i++) {
+            try {
+                const fileId = await uploadFile(req.files[i].path);
+                fileIds.push(fileId); // Thêm ID file vào mảng
+            } catch (err) {
+                Product.find((err, data) => {
+                    if (err) {
+                        return res.json({
+                            message: "Không tìm thấy sản phẩm",
+                            data: data,
+                            status: true,
+                        });
+                    }
                     return res.json({
-                        message: "Không tìm thấy sản phẩm",
+                        message: "Không thêm được ảnh. Xin thử lại !",
                         data: data,
                         status: true,
                     });
-                }
-                return res.json({
-                    message: "Không thêm được ảnh. Xin thử lại !",
-                    data: data,
-                    status: true,
                 });
-            });
+            }
         }
     }
-    if (fileIds.length > 0) {
+    if (fileIds.length > 0 || req.files.length <= 0) {
         try {
-
             const productNew = [];
             const classifiesNew = [];
             for (let i = 0; i < fileIds.length; i++) {
@@ -314,31 +316,42 @@ export const update = async (req, res) => {
                     linked: product.linked,
                 });
             });
-            const { file, ...newDataPro } = productNew[0];
-            console.log(newDataPro, 'newDataPro')
-            await Classification.create(newclassifiesAdd);
-            for (let i = 0; i < classifiesRemove.length; i++) {
-                cloudinary.uploader.destroy(classifiesRemove[i].image_id);
-                await Classification.deleteMany({
-                    _id: { $in: ObjectID(classifiesRemove[i]._id) },
-                });
+            const { file, ...newDataPro } =
+                newProduct.file.stauts == false ? newProduct : productNew[0];
+            if (newclassifiesAdd.length > 0) {
+                for (let i = 0; i < newclassifiesAdd.length; i++) {
+                    await Classification.create(newclassifiesAdd[i]);
+                }
             }
-            for (let i = 0; i < classifiesUpload.length; i++) {
-                await Classification.updateMany(
-                    {
-                        _id: { $in: classifiesUpload[i]._id },
-                    },
-                    {
-                        $set: classifiesUpload[i],
-                    }
-                );
+            if (classifiesRemove.length > 0) {
+                for (let i = 0; i < classifiesRemove.length; i++) {
+                    cloudinary.uploader.destroy(classifiesRemove[i].image_id);
+                    await Classification.deleteMany({
+                        _id: { $in: ObjectID(classifiesRemove[i]._id) },
+                    });
+                }
+            }
+            if (classifiesUpload.length > 0) {
+                for (let i = 0; i < classifiesUpload.length; i++) {
+                    await Classification.updateMany(
+                        {
+                            _id: { $in: classifiesUpload[i]._id },
+                        },
+                        {
+                            $set: classifiesUpload[i],
+                        }
+                    );
+                }
             }
             await Product.updateMany(
                 {
-                    _id: { $in: newDataPro._id },
+                    _id: { $in: product._id },
                 },
                 {
-                    $set: newDataPro,
+                    $set: {
+                        ...newDataPro,
+                        name_commodityvalue: newDataPro.name_commodityvalue
+                    },
                 }
             );
             Product.find((err, data) => {

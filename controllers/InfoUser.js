@@ -7,12 +7,24 @@ export const create = async (req, res) => {
     await InfoUser.create(req.body);
     InfoUser.find((err, data) => {
       if (err) {
-        error: "Không tìm thấy thông tin";
+        return res.json({
+          message: "Không tìm thấy thông tin",
+          data: data,
+          status: true,
+        });
       }
-      return res.json(data);
+      return res.json({
+        message: "Thêm địa chỉ thành công",
+        data: data,
+        status: true,
+      });
     });
   } catch (error) {
-    return res.status(400).json(error);
+    return res.json({
+      message: "Lấy dữ liệu không thành công",
+      data: [],
+      status: true,
+    });
   }
 };
 
@@ -31,36 +43,51 @@ export const read = (req, res) => {
   return res.json(req.infoUser);
 };
 
-export const remove = async (req, res) => {
+export const removeAdress = async (req, res) => {
   try {
-    await InfoUser.findByIdAndRemove(req.infoUser._id);
+    await InfoUser.findByIdAndRemove(req.body._id);
     InfoUser.find((err, data) => {
       if (err) {
-        error: "Không tìm thấy sản phẩm";
+        return res.json({
+          message: "Không tìm thấy thông tin",
+          data: data,
+          status: true,
+        });
       }
-      return res.json(data);
+      return res.json({
+        message: "Thêm địa chỉ thành công",
+        data: data,
+        status: true,
+      });
     });
   } catch (error) {
     return res.status(400).json(error);
   }
-
 };
 
 export const list = (req, res) => {
   InfoUser.find((err, data) => {
     if (err) {
-      error: "Không tìm thấy thông tin";
+      return res.json({
+        message: "Không tìm thấy thông tin",
+        data: data,
+        status: true,
+      });
     }
-    res.json(data);
+    return res.json({
+      message: "Thêm địa chỉ thành công",
+      data: data,
+      status: true,
+    });
   });
 };
-
-export const update = async (req, res) => {
+// sửa địa chỉ mặc định
+export const updateAdress = async (req, res) => {
   try {
-    const { _idUpload, _idInfoTrue } = req.body;
+    const { _idInfoFalse, _idInfoTrue } = req.body;
     await InfoUser.updateMany(
       {
-        _id: { $in: _idUpload },
+        _id: { $in: _idInfoTrue },
       },
       {
         $set: {
@@ -68,24 +95,63 @@ export const update = async (req, res) => {
         },
       }
     );
-    if (_idInfoTrue !== undefined) {
-      await InfoUser.updateMany(
-        {
-          _id: { $in: _idInfoTrue },
-        },
-        {
-          $set: {
-            status: false
+    await InfoUser.updateMany(
+      {
+        _id: { $in: _idInfoFalse },
+      },
+      {
+        $set: {
+          status: false
 
-          },
-        }
-      );
-    }
-    InfoUser.find((err, dataAll) => {
-      if (err) {
-        error: "Không tìm thấy sp oder";
+        },
       }
-      return res.json(dataAll);
+    );
+    InfoUser.find((err, data) => {
+      if (err) {
+        return res.json({
+          message: "Không tìm thấy thông tin",
+          data: data,
+          status: true,
+        });
+      }
+      return res.json({
+        message: "Thêm địa chỉ thành công",
+        data: data,
+        status: true,
+      });
+    });
+  } catch (error) {
+    return res.status(400).json(error);
+  }
+};
+
+
+// sửa địa chỉ mặc định
+export const updateInfoAdress = async (req, res) => {
+  try {
+    const { _id, data } = req.body;
+    await InfoUser.updateMany(
+      {
+        _id: { $in: _id },
+      },
+      {
+        $set: data,
+      }
+    );
+   
+    InfoUser.find((err, data) => {
+      if (err) {
+        return res.json({
+          message: "Không tìm thấy thông tin",
+          data: data,
+          status: true,
+        });
+      }
+      return res.json({
+        message: "Thêm địa chỉ thành công",
+        data: data,
+        status: true,
+      });
     });
   } catch (error) {
     return res.status(400).json(error);

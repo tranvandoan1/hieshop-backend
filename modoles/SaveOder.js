@@ -3,14 +3,14 @@ const { ObjectId } = mongoose.Schema;
 
 const Saveoder = new mongoose.Schema(
   {
-    user_id: {
-      type: ObjectId,
-      ref: "users",
-      required: true,
-    },
-    linked: {
-      type: String,
-    },
+    // user_id: {
+    //   type: ObjectId,
+    //   ref: "users",
+    //   required: true,
+    // },
+    // linked: {
+    //   type: String,
+    // },
     amount: {
       type: Number,
       trim: true,
@@ -41,29 +41,28 @@ const Saveoder = new mongoose.Schema(
       trim: true,
     },
 
-    shop_id: {
-      type: ObjectId,
-      ref: "shopowner",
-      required: true,
+    code_shop: {
+      type: String,
+
     },
-    classification_id: {
-      type: ObjectId,
-      ref: "classification",
-      required: true,
-    },
-    commodity_value_id: {
-      type: ObjectId || undefined,
-      ref: "classification",
-    },
+    // classification_id: {
+    //   type: ObjectId,
+    //   ref: "classification",
+    //   required: true,
+    // },
+    // commodity_value_id: {
+    //   type: ObjectId || undefined,
+    //   ref: "classification",
+    // },
     pro_id: {
       type: ObjectId,
       ref: "product",
       required: true,
     },
-    check: {
-      type: Boolean,
-      default: false,
-    },
+    // check: {
+    //   type: Boolean,
+    //   default: false,
+    // },
   },
   { timestamps: true }
 );

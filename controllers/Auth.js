@@ -23,10 +23,9 @@ export const signup = async (req, res) => {
     email: req.body.email,
   });
   const phone = await Users.findOne({
-    phone: req.body.phone,
+    phone: req.body.phone == undefined ? 1 : req.body.phone,
   });
-
-  if (phone !== null) {
+  if (phone !== null && req.body.phone !== undefined) {
     return res.json({
       message: "Số điện thoại đã được sử dụng !",
       status: false,
@@ -44,7 +43,7 @@ export const signup = async (req, res) => {
       status: false,
       data: undefined,
     });
-  } else if ((isPhoneNumber(req.body.phone) == req.body.google)) {
+  } else if (isPhoneNumber(req.body.phone) == req.body.google) {
     return res.json({
       message: "Số điện thoại không đúng định dạng !",
       status: false,
@@ -53,7 +52,7 @@ export const signup = async (req, res) => {
   } else {
     if (req.body.otp == 1) {
       try {
-      let transporter = nodemailer.createTransport({
+        let transporter = nodemailer.createTransport({
           host: mailHost,
           service: "gmail",
           port: 587,
@@ -104,38 +103,67 @@ export const signup = async (req, res) => {
             data: undefined,
           });
         } else {
-          if (req.file !== undefined) {
+          if (req.uid == undefined) {
             try {
-              cloudinary.uploader.upload(
-                req.file.path,
-                { folder: "categories" },
-                async function (error, result) {
-                  const newUser = {
-                    name: req.body.name,
-                    email: req.body.email,
-                    hashed_password: password,
-                    avatar: result.url,
-                    phone: req.body.phone,
-                    image_id: result.public_id,
-                  };
-                  const user = new Users(newUser);
-                  user.save((error, user) => {
-                    if (error) {
-                      return res.status(400).json({
-                        error: "Không thêm được",
-                        data: undefined,
-                        status: false,
+              if (req.file !== undefined) {
+                cloudinary.uploader.upload(
+                  req.file.path,
+                  { folder: "categories" },
+                  async function (error, result) {
+                    const newUser = {
+                      name: req.body.name,
+                      email: req.body.email,
+                      hashed_password: password,
+                      avatar: result.url,
+                      phone: req.body.phone,
+                      image_id: result.public_id,
+                      role: req.body.role == "true" ? 0 : 1,
+                      code: req.body.code,
+                    };
+                    const user = new Users(newUser);
+                    user.save((error, user) => {
+                      if (error) {
+                        return res.status(400).json({
+                          error: "Không thêm được",
+                          data: undefined,
+                          status: false,
+                        });
+                      }
+                      return res.json({
+                        message: "Đăng ký thành công",
+                        status: true,
+                        data: user,
                       });
-                    }
-                    return res.json({
-                      message: "Đăng ký thành công",
-                      status: true,
-                      data: user,
                     });
+                  }
+                );
+              } else {
+                const newUser = {
+                  name: req.body.name,
+                  email: req.body.email,
+                  hashed_password: password,
+                  avatar: 'https://png.pngtree.com/png-vector/20190805/ourlarge/pngtree-account-avatar-user-abstract-circle-background-flat-color-icon-png-image_1650938.jpg',
+                  phone: req.body.phone,
+                  image_id: '',
+                  role: req.body.role == "true" ? 0 : 1,
+                  code: req.body.code,
+                };
+                const user = new Users(newUser);
+                user.save((error, user) => {
+                  if (error) {
+                    return res.status(400).json({
+                      error: "Không thêm được",
+                      data: undefined,
+                      status: false,
+                    });
+                  }
+                  return res.json({
+                    message: "Đăng ký thành công",
+                    status: true,
+                    data: user,
                   });
-
-
-                })
+                });
+              }
             } catch (err) {
               return res.json({
                 message: "Lỗi không đăng ký được",
@@ -152,6 +180,8 @@ export const signup = async (req, res) => {
               phone: req.body.phone,
               uid: req.body.uid,
               image_id: 1,
+              role: req.body.role == "true" ? 0 : 1,
+              code: req.body.code,
             };
             const user = new Users(newUser);
             user.save((error, user) => {
@@ -173,7 +203,7 @@ export const signup = async (req, res) => {
       });
     }
   }
-}
+};
 export const signin = async (req, res) => {
   if (req.body.select == "google") {
     const userGoogle = await User.findOne({
@@ -192,12 +222,12 @@ export const signin = async (req, res) => {
       return res.json({
         token,
         user: { _id, avatar, email, name, role, phone, image_id },
-        message: 'Đăng nhập thành công',
-        status: true
+        message: "Đăng nhập thành công",
+        status: true,
       });
     }
   } else {
-    const { value, password } = req.body
+    const { value, password, role, code } = req.body;
     function isValidEmail(email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return emailRegex.test(email);
@@ -217,40 +247,67 @@ export const signin = async (req, res) => {
     }
     if (isValidEmail(value) == false && isPhoneNumber(value) == false) {
       return res.json({
-        message: 'Email hoặc số điện thoại không đúng định dạng !',
-        status: false
+        message: "Email hoặc số điện thoại không đúng định dạng !",
+        status: false,
       });
     } else {
       if (user !== null) {
-        bcrypt.compare(password, user.hashed_password, function (error, result) {
-          // hàm callback được gọi khi quá trình so sánh hoàn tất
-          if (error) {
-            return res.json({
-              message: 'Lỗi xin thử lại',
-              status: false
-            });
-          } else if (result) {
-            const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
-            res.cookie("t", token, { expire: new Date() + 9999 });
+        bcrypt.compare(
+          password,
+          user.hashed_password,
+          function (error, result) {
+            // hàm callback được gọi khi quá trình so sánh hoàn tất
+            if (error) {
+              return res.json({
+                message: "Lỗi xin thử lại",
+                status: false,
+              });
+            } else if (result) {
+              // if (user.role == 0) {
+              const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+              res.cookie("t", token, { expire: new Date() + 9999 });
 
-            const { _id, name, avatar, email, role, phone, image_id } = user;
-            return res.json({
-              token,
-              user: { _id, avatar, email, name, role, phone, image_id },
-              message: 'Đăng nhập thành công',
-              status: true
-            });
-          } else {
-            return res.json({
-              message: "Mật khẩu không khớp",
-              status: false
-            });
+              const { _id, name, avatar, email, role, phone, image_id,code } = user;
+              return res.json({
+                token,
+                user: { _id, email, role ,code},
+                message: "Đăng nhập thành công",
+                status: true,
+              });
+              // } else {
+              //   // if (role == undefined) {
+              //   //   return res.json({
+              //   //     role: user.role,
+              //   //     message: "Nhập mã cửa hàng !",
+              //   //     status: true,
+              //   //   });
+              //   // } else {
+              //   const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+              //   res.cookie("t", token, { expire: new Date() + 9999 });
+
+              //   const { _id, name, avatar, email, role, phone, image_id } = user;
+              //   return res.json({
+              //     token,
+              //     user: { _id, avatar, email, name, role, phone, image_id, code },
+              //     message: "Đăng nhập thành công",
+              //     status: true,
+              //   });
+              // }
+
+              // }
+
+            } else {
+              return res.json({
+                message: "Mật khẩu không khớp",
+                status: false,
+              });
+            }
           }
-        });
+        );
       } else {
         return res.json({
           message: "Tài khoản không tồn tại !",
-          status: false
+          status: false,
         });
       }
     }
