@@ -13,6 +13,10 @@ const categorySchema = new mongoose.Schema({
     image_id:{
         type: String
 
-    }
+    },
+    code_shop:{
+        type: String
+
+    },
 }, { timestamps: true });
 module.exports = mongoose.model('categoris', categorySchema);

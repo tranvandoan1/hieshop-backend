@@ -8,18 +8,16 @@ const mailHost = "smtp.gmail.com";
 const cloudinary = require("cloudinary").v2;
 
 export const list = async (req, res) => {
-    console.log('vào nè vào nè')
     const user = await User.findOne({
         _id: req.params.userId,
     });
     return res.json({
         message: "Lấy dữ liệu thành công",
-        status: false,
+        status: 1,
         data: user,
     });
 };
 export const listAll = async (req, res) => {
-    console.log('chàoas')
     User.find((err, data) => {
         if (err) {
             return res.json({
@@ -30,7 +28,7 @@ export const listAll = async (req, res) => {
         }
         return res.json({
             message: "Lấy dữ liệu thành công",
-            status: false,
+            status: 1,
             data: data,
         });
     });
@@ -52,35 +50,31 @@ export const read = (req, res) => {
 
     return res.json(req.profile);
 };
-export const update = async (req, res) => {
+export const updateAdmin = async (req, res) => {
     const fileIds = [];
     function isPhoneNumber(input) {
         const phoneRegex = /^\d{10}$/;
         return phoneRegex.test(input);
     }
-
-    const phone = await Users.findOne({
-        phone: req.body.phone,
-    });
     const user = await User.findOne({
         _id: req.body._id,
-
     });
-    // console.log(isPhoneNumber(req.body.phone), 'isPhoneNumber(req.body.phone)')
-    // console.log(phone, 'phone')
-    // if (phone !== null && req.body.phone !== undefined) {
-
-    //     return res.json({
-    //         message: "Số điện thoại đã được sử dụng !",
-    //         status: false,
-    //         data: user,
-    //     });
-    // } else 
+    console.log(isPhoneNumber(req.body.phone), 'isPhoneNumber(phone)')
     if (isPhoneNumber(req.body.phone) == false) {
-        return res.json({
-            message: "Số điện thoại không đúng định dạng !",
-            status: false,
-            data: user,
+
+        User.find((err, data) => {
+            if (err) {
+                return res.json({
+                    message: "Không lấy được dữ liệu",
+                    status: false,
+                    data: [],
+                });
+            }
+            return res.json({
+                message: "Số điện thoại không đúng định dạng !",
+                status: false,
+                data: data,
+            });
         });
     } else {
         if (req.files.length > 0) {
@@ -91,18 +85,18 @@ export const update = async (req, res) => {
                         { folder: "products" },
                         async function (error, result) {
                             if (error) {
-                                Product.find((err, data) => {
+                                User.find((err, data) => {
                                     if (err) {
                                         return res.json({
-                                            message: "Không tìm thấy sản phẩm",
-                                            data: data,
-                                            status: true,
+                                            message: "Không lấy được dữ liệu",
+                                            status: false,
+                                            data: [],
                                         });
                                     }
                                     return res.json({
-                                        message: "Không thêm được ảnh. Xin thử lại !",
+                                        message: "Lỗi không thêm được ảnh !",
+                                        status: false,
                                         data: data,
-                                        status: true,
                                     });
                                 });
                             } else {
@@ -184,13 +178,19 @@ export const update = async (req, res) => {
                                         },
                     }
                 );
-                const userNew = await User.findOne({
-                    _id: req.body._id,
-                });
-                return res.json({
-                    message: "Sửa thành công",
-                    status: true,
-                    data: userNew,
+                User.find((err, data) => {
+                    if (err) {
+                        return res.json({
+                            message: "Không lấy được dữ liệu",
+                            status: false,
+                            data: [],
+                        });
+                    }
+                    return res.json({
+                        message: "Cập nhật dữ liệu thành công",
+                        status: true,
+                        data: data,
+                    });
                 });
             } catch (err) {
                 return res.json({
@@ -213,13 +213,19 @@ export const update = async (req, res) => {
                         },
                     }
                 );
-                const user = await User.findOne({
-                    _id: req.body._id,
-                });
-                return res.json({
-                    message: "Sửa thành công",
-                    status: true,
-                    data: user,
+                User.find((err, data) => {
+                    if (err) {
+                        return res.json({
+                            message: "Không lấy được dữ liệu",
+                            status: false,
+                            data: [],
+                        });
+                    }
+                    return res.json({
+                        message: "Cập nhật dữ liệu thành công",
+                        status: true,
+                        data: data,
+                    });
                 });
             } catch (err) {
                 return res.json({
@@ -231,7 +237,107 @@ export const update = async (req, res) => {
         }
     }
 };
+export const updateUser = async (req, res) => {
+    const { _id, name, email, phone, image_id } = req.body;
 
+    function isPhoneNumber(input) {
+        const phoneRegex = /^\d{10}$/;
+        return phoneRegex.test(input);
+    }
+ 
+    if (isPhoneNumber(phone) == false) {
+        User.find((err, data) => {
+            if (err) {
+                return res.json({
+                    message: "Không lấy được dữ liệu",
+                    status: false,
+                    data: [],
+                });
+            }
+            return res.json({
+                message: "Số điện thoại không đúng định dạng !",
+                status: false,
+                data: data,
+            });
+        });
+    } else {
+        // Upload ảnh
+        if (req.file !== undefined) {
+            cloudinary.uploader.upload(
+                req.file.path,
+                { folder: "categories" },
+                async function (error, result) {
+                    try {
+                        console.log(result, 'result')
+                        await cloudinary.uploader.destroy(image_id);
+                        await User.updateMany(
+                            {
+                                _id: { $in: _id },
+                            },
+                            {
+                                $set: {
+                                    avatar: result.url,
+                                    image_id: result.public_id,
+                                    phone: phone,
+                                    email: email,
+                                    name: name,
+                                },
+                            }
+                        );
+                        User.find((err, data) => {
+                            if (err) {
+                                return res.json({
+                                    message: "Không lấy được dữ liệu",
+                                    status: false,
+                                    data: [],
+                                });
+                            }
+                            return res.json({
+                                message: "Cập nhật dữ liệu thành công",
+                                status: true,
+                                data: data,
+                            });
+                        });
+                    } catch (err) {
+                        return res.json({
+                            message: "Lỗi không thêm được !",
+                            status: false,
+                            data: undefined,
+                        });
+                    }
+                }
+            );
+        } else {
+            await User.updateMany(
+                {
+                    _id: { $in: _id },
+                },
+                {
+                    $set: {
+                        phone: phone,
+                        email: email,
+                        name: name,
+                    },
+                }
+            );
+            User.find((err, data) => {
+                if (err) {
+                    return res.json({
+                        message: "Không lấy được dữ liệu",
+                        status: false,
+                        data: [],
+                    });
+                }
+                return res.json({
+                    message: "Cập nhật dữ liệu thành công",
+                    status: true,
+                    data: data,
+                });
+            });
+        }
+
+    }
+};
 export const remove = (req, res) => {
     let user = req.profile;
     user.remove((err, user) => {

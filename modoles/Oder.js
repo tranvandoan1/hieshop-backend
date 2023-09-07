@@ -1,38 +1,32 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 const { ObjectId } = mongoose.Schema;
 
-const Oder = new mongoose.Schema({
-
+const Oder = new mongoose.Schema(
+  {
     user_id: {
-        type: String,
-        trim: true
+      type: String,
+      trim: true,
     },
-    shop_id: {
-        type: String,
-        trim: true
+    code_shop: {
+      type: String,
+      trim: true,
     },
-    connection: {
-        type: String,
-        trim: true
+    price: {
+      type: String,
+      trim: true,
+    },
+    info_user_id: {
+      type: ObjectId,
+      ref: "InfoUser",
+    },
+    values: {
+      type: String,
     },
     status: {
-        type: String,
-        trim: true
+      type: String,
+      default: 1,
     },
-    nameUser: {
-        type: String,
-        trim: true
-    },
-    phone: {
-        type: String,
-        trim: true
-    },
-    address: {
-        type: String,
-        trim: true
-    },
-    day: {
-        type: String
-    }
-}, { timestamps: true });
-module.exports = mongoose.model('Oder', Oder);
+  },
+  { timestamps: true }
+);
+module.exports = mongoose.model("Oder", Oder);

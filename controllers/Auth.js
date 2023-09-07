@@ -218,10 +218,10 @@ export const signin = async (req, res) => {
       const token = jwt.sign({ _id: userGoogle._id }, process.env.JWT_SECRET);
       res.cookie("t", token, { expire: new Date() + 9999 });
 
-      const { _id, name, avatar, email, role, phone, image_id } = userGoogle;
+      const { _id, name, avatar, email, role, phone, image_id, code } = userGoogle;
       return res.json({
         token,
-        user: { _id, avatar, email, name, role, phone, image_id },
+        user: { _id, name, avatar, email, role, phone, image_id, code },
         message: "Đăng nhập thành công",
         status: true,
       });
@@ -266,11 +266,10 @@ export const signin = async (req, res) => {
               // if (user.role == 0) {
               const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
               res.cookie("t", token, { expire: new Date() + 9999 });
-
-              const { _id, name, avatar, email, role, phone, image_id,code } = user;
+              const { _id, name, avatar, email, role, phone, image_id, code, logo } = user;
               return res.json({
                 token,
-                user: { _id, email, role ,code},
+                user: { _id, name, avatar, email, role, phone, image_id, code, logo },
                 message: "Đăng nhập thành công",
                 status: true,
               });

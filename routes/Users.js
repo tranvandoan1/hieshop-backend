@@ -11,7 +11,8 @@ import {
     checkEmailUpload,
     uploadPassword,
     listAll,
-    update
+    updateAdmin,
+    updateUser
 } from "../controllers/Users";
 import { requireSignin, isAdmin, isAuth } from "../controllers/Auth";
 import { isAuthenticateUser } from "../middlewares/CheckAuth";
@@ -50,7 +51,8 @@ router.get("/secret/:userId", requireSignin, isAuth, isAdmin, (req, res) => {
 router.get("/user/:userId", read);
 router.get("/get-user-all", listAll);
 const upload = multer({ storage: storage });
-router.post("/upload-user", upload.array("files"),update );
+router.post("/upload-admin", upload.array("files"),updateAdmin );
+router.post("/upload-user", upload.single("files"),updateUser );
 router.get("/get-user/:userId", list);
 router.delete("/user/:userId", remove);
 

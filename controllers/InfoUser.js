@@ -75,9 +75,9 @@ export const list = (req, res) => {
       });
     }
     return res.json({
-      message: "Thêm địa chỉ thành công",
+      message: "Lấy dữ liệu thành công",
       data: data,
-      status: true,
+      status: 1,
     });
   });
 };

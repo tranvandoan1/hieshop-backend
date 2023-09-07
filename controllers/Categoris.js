@@ -9,12 +9,15 @@ export const create = async (req, res) => {
     req.file.path,
     { folder: "categories" },
     async function (error, result) {
+      console.log(result, 'result')
       try {
         const newUser = {
           name: req.body.name,
           photo: result.url,
           image_id: result.public_id,
+          code_shop: req.body.code_shop,
         };
+        console.log(newUser, 'newUser')
         await Category.create(newUser);
         Category.find((err, data) => {
           if (err) {
@@ -105,45 +108,49 @@ export const list = (req, res) => {
 
 export const update = async (req, res) => {
   const { _id, name, image_id, files } = req.body;
-  cloudinary.uploader.destroy(image_id);
-  cloudinary.uploader.upload(
-    req.file.path,
-    { folder: "categories" },
-    async function (error, result) {
-      if (error) {
-        Category.find((err, data) => {
-          if (err) {
-            return res.json({
-              message: "Lỗi !",
-              status: false,
-              data: undefined,
-            });
+  if (req.file == undefined) {
+    try {
+      await Category.updateMany(
+        {
+          _id: { $in: _id },
+        },
+        {
+          $set:
+          {
+            name: name,
           }
-          return res.json({
-            message: 'Lỗi xin thử lại',
-            data: data,
-            status: false
-          });
-        });
-      } else {
 
-        try {
-          await Category.updateMany(
-            {
-              _id: { $in: _id },
-            },
-            {
-              $set: req.file == undefined ?
-                {
-                  name: name,
-                }
-                : {
-                  name: name,
-                  photo: result.url,
-                  image_id: result.public_id,
-                },
-            }
-          );
+        }
+      );
+      Category.find((err, data) => {
+        if (err) {
+          return res.json({
+            message: "Lỗi !",
+            status: false,
+            data: undefined,
+          });
+        }
+        return res.json({
+          message: 'Sửa thành công',
+          data: data,
+          status: true
+        });
+      });
+
+    } catch (err) {
+      return res.json({
+        message: "Lỗi không thêm được !",
+        status: false,
+        data: undefined,
+      });
+    }
+  } else {
+    cloudinary.uploader.destroy(image_id);
+    cloudinary.uploader.upload(
+      req.file.path,
+      { folder: "categories" },
+      async function (error, result) {
+        if (error) {
           Category.find((err, data) => {
             if (err) {
               return res.json({
@@ -153,22 +160,57 @@ export const update = async (req, res) => {
               });
             }
             return res.json({
-              message: 'Sửa thành công',
+              message: 'Lỗi xin thử lại',
               data: data,
-              status: true
+              status: false
             });
           });
+        } else {
 
-        } catch (err) {
-          return res.json({
-            message: "Lỗi không thêm được !",
-            status: false,
-            data: undefined,
-          });
+          try {
+            await Category.updateMany(
+              {
+                _id: { $in: _id },
+              },
+              {
+                $set: req.file == undefined ?
+                  {
+                    name: name,
+                  }
+                  : {
+                    name: name,
+                    photo: result.url,
+                    image_id: result.public_id,
+                  },
+              }
+            );
+            Category.find((err, data) => {
+              if (err) {
+                return res.json({
+                  message: "Lỗi !",
+                  status: false,
+                  data: undefined,
+                });
+              }
+              return res.json({
+                message: 'Sửa thành công',
+                data: data,
+                status: true
+              });
+            });
+
+          } catch (err) {
+            return res.json({
+              message: "Lỗi không thêm được !",
+              status: false,
+              data: undefined,
+            });
+          }
         }
       }
-    }
-  );
+    );
+  }
+
 
 
 }
