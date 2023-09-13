@@ -14,11 +14,6 @@ const storage = multer.diskStorage({
 });
 // single
 const upload = multer({ storage: storage });
-cloudinary.config({
-    cloud_name: 'ddnkbpdzs',
-    api_key: '665144417678677',
-    api_secret: 'qKRYqgMn8iBBpb77LU4dxm1HpVQ'
-});
 
 router.post("/categoris", upload.single("files"), create);
 router.post("/categoris-upload", upload.single("files"),update);

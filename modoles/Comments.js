@@ -19,6 +19,9 @@ const Comment = new mongoose.Schema({
     },
     photo: {
         type: Array
+    },
+    code_shop:{
+        type:String
     }
 }, { timestamps: true });
 module.exports = mongoose.model('comments', Comment);

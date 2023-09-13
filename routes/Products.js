@@ -1,28 +1,5 @@
 import express from "express";
 import multer from "multer";
-import { google } from "googleapis";
-import fs from "fs";
-import {v2 as cloudinary} from 'cloudinary';
-          
-
-import Product from "../modoles/Products";
-import Classification from "../modoles/Classification";
-const CLIENT_ID = process.env.CLIENT_ID;
-const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
-const REQUEST_URI = process.env.REQUEST_URI;
-
-const oauth2Client = new google.auth.OAuth2(
-    CLIENT_ID,
-    CLIENT_SECRET,
-    REQUEST_URI
-);
-oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
-const drive = google.drive({
-    version: "v3",
-    auth: oauth2Client,
-});
-
 import {
     list,
     update,
