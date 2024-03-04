@@ -8,6 +8,7 @@ const mailHost = "smtp.gmail.com";
 const cloudinary = require("cloudinary").v2;
 
 export const list = async (req, res) => {
+    console.log('có vào')
     const user = await User.findOne({
         _id: req.params.userId,
     });
@@ -18,6 +19,7 @@ export const list = async (req, res) => {
     });
 };
 export const listAll = async (req, res) => {
+    console.log('có vào âll')
     User.find((err, data) => {
         if (err) {
             return res.json({
@@ -59,46 +61,48 @@ export const updateAdmin = async (req, res) => {
     const user = await User.findOne({
         _id: req.body._id,
     });
-    console.log(isPhoneNumber(req.body.phone), 'isPhoneNumber(phone)')
     if (isPhoneNumber(req.body.phone) == false) {
-
-        User.find((err, data) => {
-            if (err) {
-                return res.json({
-                    message: "Không lấy được dữ liệu",
-                    status: false,
-                    data: [],
-                });
-            }
-            return res.json({
-                message: "Số điện thoại không đúng định dạng !",
-                status: false,
-                data: data,
-            });
+        const user = await User.findOne({
+            _id: req.body._id,
         });
+        return res.json({
+            data: user,
+            message: "Số điện thoại không đúng !",
+            status: false,
+        });
+
+
     } else {
         if (req.files.length > 0) {
             function uploadFile(fileMetadata, media) {
                 return new Promise((resolve, reject) => {
                     cloudinary.uploader.upload(
                         fileMetadata,
-                        { folder: "products" },
+                        { folder: "user" },
                         async function (error, result) {
                             if (error) {
-                                User.find((err, data) => {
-                                    if (err) {
-                                        return res.json({
-                                            message: "Không lấy được dữ liệu",
-                                            status: false,
-                                            data: [],
-                                        });
-                                    }
-                                    return res.json({
-                                        message: "Lỗi không thêm được ảnh !",
-                                        status: false,
-                                        data: data,
-                                    });
+                                const user = await User.findOne({
+                                    _id: req.body._id,
                                 });
+                                return res.json({
+                                    message: "Lỗi không thêm được ảnh !",
+                                    status: false,
+                                    data: user,
+                                });
+                                // User.find((err, data) => {
+                                //     if (err) {
+                                //         return res.json({
+                                //             message: "Không lấy được dữ liệu",
+                                //             status: false,
+                                //             data: [],
+                                //         });
+                                //     }
+                                //     return res.json({
+                                //         message: "Lỗi không thêm được ảnh !",
+                                //         status: false,
+                                //         data: data,
+                                //     });
+                                // });
                             } else {
                                 resolve({
                                     image_id: result.public_id,
@@ -125,16 +129,26 @@ export const updateAdmin = async (req, res) => {
                 }
             }
         }
-
         if (fileIds.length > 0) {
+            const user = await User.findOne({
+                _id: req.body._id,
+            });
+            req.body.check == 0 ? null :
+                req.body.check == 1 ?
+                    cloudinary.uploader.destroy(user.image_id) :
+                    req.body.check == 2 ?
+                        cloudinary.uploader.destroy(user.logo_id) :
+                        (cloudinary.uploader.destroy(user.logo_id),
+                            cloudinary.uploader.destroy(user.image_id))
             try {
+
                 await User.updateMany(
                     {
                         _id: { $in: req.body._id },
                     },
                     {
                         $set:
-                            req.body.check == 0
+                            (req.body.check == 0
                                 ? {
                                     logo: user.logo,
                                     logo_id: user.logo_id,
@@ -175,22 +189,16 @@ export const updateAdmin = async (req, res) => {
                                             phone: req.body.phone,
                                             email: req.body.email,
                                             name: req.body.name,
-                                        },
+                                        }),
                     }
                 );
-                User.find((err, data) => {
-                    if (err) {
-                        return res.json({
-                            message: "Không lấy được dữ liệu",
-                            status: false,
-                            data: [],
-                        });
-                    }
-                    return res.json({
-                        message: "Cập nhật dữ liệu thành công",
-                        status: true,
-                        data: data,
-                    });
+                const userNew = await User.findOne({
+                    _id: req.body._id,
+                });
+                return res.json({
+                    message: "Cập nhật dữ liệu thành công",
+                    status: true,
+                    data: userNew,
                 });
             } catch (err) {
                 return res.json({
@@ -213,20 +221,15 @@ export const updateAdmin = async (req, res) => {
                         },
                     }
                 );
-                User.find((err, data) => {
-                    if (err) {
-                        return res.json({
-                            message: "Không lấy được dữ liệu",
-                            status: false,
-                            data: [],
-                        });
-                    }
-                    return res.json({
-                        message: "Cập nhật dữ liệu thành công",
-                        status: true,
-                        data: data,
-                    });
+                const user = await User.findOne({
+                    _id: req.body._id,
                 });
+                return res.json({
+                    message: "Cập nhật dữ liệu thành công",
+                    status: true,
+                    data: user,
+                });
+
             } catch (err) {
                 return res.json({
                     message: "Lỗi không thêm được !",
@@ -244,7 +247,7 @@ export const updateUser = async (req, res) => {
         const phoneRegex = /^\d{10}$/;
         return phoneRegex.test(input);
     }
- 
+
     if (isPhoneNumber(phone) == false) {
         User.find((err, data) => {
             if (err) {
@@ -268,8 +271,9 @@ export const updateUser = async (req, res) => {
                 { folder: "categories" },
                 async function (error, result) {
                     try {
-                        console.log(result, 'result')
-                        await cloudinary.uploader.destroy(image_id);
+                        if (String(image_id).lenth > 0) {
+                            await cloudinary.uploader.destroy(image_id);
+                        }
                         await User.updateMany(
                             {
                                 _id: { $in: _id },
