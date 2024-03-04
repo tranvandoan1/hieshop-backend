@@ -6,16 +6,17 @@ const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const mailHost = "smtp.gmail.com";
 const cloudinary = require("cloudinary").v2;
-
+const LZString = require('lz-string');
 export const list = async (req, res) => {
-    console.log('có vào')
     const user = await User.findOne({
         _id: req.params.userId,
     });
+    var encodedString = LZString.compressToBase64(JSON.stringify(user)+process.env.JWT_SECRET);
+
     return res.json({
         message: "Lấy dữ liệu thành công",
         status: 1,
-        data: user,
+        data: encodedString,
     });
 };
 export const listAll = async (req, res) => {
@@ -28,10 +29,12 @@ export const listAll = async (req, res) => {
                 data: [],
             });
         }
+        var encodedString = LZString.compressToBase64(JSON.stringify(data)+process.env.JWT_SECRET);
+
         return res.json({
             message: "Lấy dữ liệu thành công",
             status: 1,
-            data: data,
+            data: encodedString,
         });
     });
 };
@@ -58,15 +61,17 @@ export const updateAdmin = async (req, res) => {
         const phoneRegex = /^\d{10}$/;
         return phoneRegex.test(input);
     }
-    const user = await User.findOne({
-        _id: req.body._id,
-    });
+    // const user = await User.findOne({
+    //     _id: req.body._id,
+    // });
     if (isPhoneNumber(req.body.phone) == false) {
         const user = await User.findOne({
             _id: req.body._id,
         });
+    var encodedString = LZString.compressToBase64(JSON.stringify(user)+process.env.JWT_SECRET);
+
         return res.json({
-            data: user,
+            data: encodedString,
             message: "Số điện thoại không đúng !",
             status: false,
         });
@@ -84,10 +89,12 @@ export const updateAdmin = async (req, res) => {
                                 const user = await User.findOne({
                                     _id: req.body._id,
                                 });
+                                var encodedString = LZString.compressToBase64(JSON.stringify(user)+process.env.JWT_SECRET);
+
                                 return res.json({
                                     message: "Lỗi không thêm được ảnh !",
                                     status: false,
-                                    data: user,
+                                    data: encodedString,
                                 });
                                 // User.find((err, data) => {
                                 //     if (err) {
@@ -121,10 +128,12 @@ export const updateAdmin = async (req, res) => {
                     const user = await User.findOne({
                         _id: req.body._id,
                     });
+                    var encodedString = LZString.compressToBase64(JSON.stringify(user)+process.env.JWT_SECRET);
+
                     return res.json({
                         message: "Không tìm thấy sản phẩm",
                         status: false,
-                        data: user,
+                        data: encodedString,
                     });
                 }
             }
@@ -195,16 +204,18 @@ export const updateAdmin = async (req, res) => {
                 const userNew = await User.findOne({
                     _id: req.body._id,
                 });
+                var encodedString = LZString.compressToBase64(JSON.stringify(userNew)+process.env.JWT_SECRET);
+
                 return res.json({
                     message: "Cập nhật dữ liệu thành công",
                     status: true,
-                    data: userNew,
+                    data: encodedString,
                 });
             } catch (err) {
                 return res.json({
                     message: "Lỗi không thêm được !",
                     status: false,
-                    data: undefined,
+                    data: [],
                 });
             }
         } else {
@@ -224,17 +235,19 @@ export const updateAdmin = async (req, res) => {
                 const user = await User.findOne({
                     _id: req.body._id,
                 });
+                var encodedString = LZString.compressToBase64(JSON.stringify(user)+process.env.JWT_SECRET);
+
                 return res.json({
                     message: "Cập nhật dữ liệu thành công",
                     status: true,
-                    data: user,
+                    data: encodedString,
                 });
 
             } catch (err) {
                 return res.json({
                     message: "Lỗi không thêm được !",
                     status: false,
-                    data: undefined,
+                    data: [],
                 });
             }
         }
@@ -257,10 +270,12 @@ export const updateUser = async (req, res) => {
                     data: [],
                 });
             }
+            var encodedString = LZString.compressToBase64(JSON.stringify(data)+process.env.JWT_SECRET);
+
             return res.json({
                 message: "Số điện thoại không đúng định dạng !",
                 status: false,
-                data: data,
+                data: encodedString,
             });
         });
     } else {
@@ -296,17 +311,19 @@ export const updateUser = async (req, res) => {
                                     data: [],
                                 });
                             }
+                            var encodedString = LZString.compressToBase64(JSON.stringify(data)+process.env.JWT_SECRET);
+
                             return res.json({
                                 message: "Cập nhật dữ liệu thành công",
                                 status: true,
-                                data: data,
+                                data: encodedString,
                             });
                         });
                     } catch (err) {
                         return res.json({
                             message: "Lỗi không thêm được !",
                             status: false,
-                            data: undefined,
+                            data: [],
                         });
                     }
                 }
@@ -332,10 +349,12 @@ export const updateUser = async (req, res) => {
                         data: [],
                     });
                 }
+                var encodedString = LZString.compressToBase64(JSON.stringify(data)+process.env.JWT_SECRET);
+
                 return res.json({
                     message: "Cập nhật dữ liệu thành công",
                     status: true,
-                    data: data,
+                    data: encodedString,
                 });
             });
         }
