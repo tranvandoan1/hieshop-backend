@@ -2,6 +2,7 @@ import formidable from "formidable";
 import _ from "lodash";
 import User from "../modoles/Users";
 import Users from "../modoles/Users";
+import { dataEn } from "../middlewares/Endcode";
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const mailHost = "smtp.gmail.com";
@@ -11,17 +12,12 @@ export const list = async (req, res) => {
     const user = await User.findOne({
         _id: req.params.userId,
     });
-    var encodedString = LZString.compressToBase64(JSON.stringify(user)+process.env.JWT_SECRET);
 
-    return res.json({
-        message: "Lấy dữ liệu thành công",
-        status: 1,
-        data: encodedString,
-    });
+    return res.json(dataEn("Lấy dữ liệu thành công", 1, user))
 };
 export const listAll = async (req, res) => {
-    console.log('có vào âll')
-    User.find((err, data) => {
+
+    User.find(async (err, data) => {
         if (err) {
             return res.json({
                 message: "Không lấy được dữ liệu",
@@ -29,13 +25,9 @@ export const listAll = async (req, res) => {
                 data: [],
             });
         }
-        var encodedString = LZString.compressToBase64(JSON.stringify(data)+process.env.JWT_SECRET);
+        const dataUserAdmin = await data.filter(item => item.role == 0)
+        return res.json(dataEn("Lấy dữ liệu thành công", 1, req.body.check == 1 ? dataUserAdmin : data))
 
-        return res.json({
-            message: "Lấy dữ liệu thành công",
-            status: 1,
-            data: encodedString,
-        });
     });
 };
 export const userById = (req, res, next, id) => {
@@ -55,26 +47,20 @@ export const read = (req, res) => {
 
     return res.json(req.profile);
 };
+// done
 export const updateAdmin = async (req, res) => {
     const fileIds = [];
     function isPhoneNumber(input) {
         const phoneRegex = /^\d{10}$/;
         return phoneRegex.test(input);
     }
-    // const user = await User.findOne({
-    //     _id: req.body._id,
-    // });
+
     if (isPhoneNumber(req.body.phone) == false) {
         const user = await User.findOne({
             _id: req.body._id,
         });
-    var encodedString = LZString.compressToBase64(JSON.stringify(user)+process.env.JWT_SECRET);
 
-        return res.json({
-            data: encodedString,
-            message: "Số điện thoại không đúng !",
-            status: false,
-        });
+        return res.json(dataEn("Số điện thoại không đúng !", false, user))
 
 
     } else {
@@ -89,27 +75,9 @@ export const updateAdmin = async (req, res) => {
                                 const user = await User.findOne({
                                     _id: req.body._id,
                                 });
-                                var encodedString = LZString.compressToBase64(JSON.stringify(user)+process.env.JWT_SECRET);
 
-                                return res.json({
-                                    message: "Lỗi không thêm được ảnh !",
-                                    status: false,
-                                    data: encodedString,
-                                });
-                                // User.find((err, data) => {
-                                //     if (err) {
-                                //         return res.json({
-                                //             message: "Không lấy được dữ liệu",
-                                //             status: false,
-                                //             data: [],
-                                //         });
-                                //     }
-                                //     return res.json({
-                                //         message: "Lỗi không thêm được ảnh !",
-                                //         status: false,
-                                //         data: data,
-                                //     });
-                                // });
+                                return res.json(dataEn("Lỗi không thêm được ảnh !", false, user))
+
                             } else {
                                 resolve({
                                     image_id: result.public_id,
@@ -128,13 +96,9 @@ export const updateAdmin = async (req, res) => {
                     const user = await User.findOne({
                         _id: req.body._id,
                     });
-                    var encodedString = LZString.compressToBase64(JSON.stringify(user)+process.env.JWT_SECRET);
 
-                    return res.json({
-                        message: "Không tìm thấy sản phẩm",
-                        status: false,
-                        data: encodedString,
-                    });
+                    return res.json(dataEn("Không tìm thấy sản phẩm", false, user))
+
                 }
             }
         }
@@ -204,13 +168,8 @@ export const updateAdmin = async (req, res) => {
                 const userNew = await User.findOne({
                     _id: req.body._id,
                 });
-                var encodedString = LZString.compressToBase64(JSON.stringify(userNew)+process.env.JWT_SECRET);
+                return res.json(dataEn("Cập nhật dữ liệu thành công", true, userNew))
 
-                return res.json({
-                    message: "Cập nhật dữ liệu thành công",
-                    status: true,
-                    data: encodedString,
-                });
             } catch (err) {
                 return res.json({
                     message: "Lỗi không thêm được !",
@@ -235,13 +194,8 @@ export const updateAdmin = async (req, res) => {
                 const user = await User.findOne({
                     _id: req.body._id,
                 });
-                var encodedString = LZString.compressToBase64(JSON.stringify(user)+process.env.JWT_SECRET);
 
-                return res.json({
-                    message: "Cập nhật dữ liệu thành công",
-                    status: true,
-                    data: encodedString,
-                });
+                return res.json(dataEn("Cập nhật dữ liệu thành công", true, user))
 
             } catch (err) {
                 return res.json({
@@ -253,9 +207,9 @@ export const updateAdmin = async (req, res) => {
         }
     }
 };
+// chưa dùng
 export const updateUser = async (req, res) => {
     const { _id, name, email, phone, image_id } = req.body;
-
     function isPhoneNumber(input) {
         const phoneRegex = /^\d{10}$/;
         return phoneRegex.test(input);
@@ -270,23 +224,19 @@ export const updateUser = async (req, res) => {
                     data: [],
                 });
             }
-            var encodedString = LZString.compressToBase64(JSON.stringify(data)+process.env.JWT_SECRET);
 
-            return res.json({
-                message: "Số điện thoại không đúng định dạng !",
-                status: false,
-                data: encodedString,
-            });
+            return res.json(dataEn("Số điện thoại không đúng định dạng !", false, data))
+
         });
     } else {
         // Upload ảnh
         if (req.file !== undefined) {
             cloudinary.uploader.upload(
                 req.file.path,
-                { folder: "categories" },
+                { folder: "user" },
                 async function (error, result) {
                     try {
-                        if (String(image_id).lenth > 0) {
+                        if (String(image_id).length > 0) {
                             await cloudinary.uploader.destroy(image_id);
                         }
                         await User.updateMany(
@@ -303,22 +253,12 @@ export const updateUser = async (req, res) => {
                                 },
                             }
                         );
-                        User.find((err, data) => {
-                            if (err) {
-                                return res.json({
-                                    message: "Không lấy được dữ liệu",
-                                    status: false,
-                                    data: [],
-                                });
-                            }
-                            var encodedString = LZString.compressToBase64(JSON.stringify(data)+process.env.JWT_SECRET);
 
-                            return res.json({
-                                message: "Cập nhật dữ liệu thành công",
-                                status: true,
-                                data: encodedString,
-                            });
+                        const user = await User.findOne({
+                            _id: _id,
                         });
+
+                        return res.json(dataEn("Cập nhật dữ liệu thành công", true, user))
                     } catch (err) {
                         return res.json({
                             message: "Lỗi không thêm được !",
@@ -341,22 +281,11 @@ export const updateUser = async (req, res) => {
                     },
                 }
             );
-            User.find((err, data) => {
-                if (err) {
-                    return res.json({
-                        message: "Không lấy được dữ liệu",
-                        status: false,
-                        data: [],
-                    });
-                }
-                var encodedString = LZString.compressToBase64(JSON.stringify(data)+process.env.JWT_SECRET);
-
-                return res.json({
-                    message: "Cập nhật dữ liệu thành công",
-                    status: true,
-                    data: encodedString,
-                });
+            const user = await User.findOne({
+                _id: _id,
             });
+
+            return res.json(dataEn("Cập nhật dữ liệu thành công", true, user))
         }
 
     }
@@ -375,6 +304,7 @@ export const remove = (req, res) => {
         });
     });
 };
+// chưa dùng
 export const checkEmailUpload = async (req, res, text) => {
     try {
         const { _id, email } = req.body;
@@ -392,6 +322,7 @@ export const checkEmailUpload = async (req, res, text) => {
         });
     }
 };
+// chưa dùng
 export const uploadEmail = async (req, res) => {
     await User.updateMany(
         {
@@ -459,17 +390,24 @@ export const forgotPassword = async (req, res) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(str);
     }
+    function isValidPhoneNumber(phoneNumber) {
+        const phoneRegex = /^\d{10}$/; // 10 chữ số liên tiếp
+        return phoneRegex.test(phoneNumber);
+    }
     const emailValide = await Users.findOne({
         email: value,
     });
-    if (isEmail(value) == false) {
+    const phoneValide = await Users.findOne({
+        phone: value,
+    });
+    if (isEmail(value) == false && isValidPhoneNumber(value) == false) {
         return res.json({
-            message: "Email không đúng định dạng !",
+            message: "Không có tài khoản này !",
             status: false,
         });
-    } else if (emailValide == null) {
+    } else if (emailValide == null && phoneValide == null) {
         return res.json({
-            message: "Email không tồn tại !",
+            message: "Tài khoản không tồn tại !",
             status: false,
         });
     } else {
@@ -495,7 +433,7 @@ export const forgotPassword = async (req, res) => {
                 let mailOptions = {
                     // from: '"Phòng QHDN" <foo@example.com>',
                     from: "OTP <your_email@gmail.com>", // sender address
-                    to: value, // list of receivers
+                    to: phoneValide.email || emailValide.email, // list of receivers
                     subject: "Thông báo", // Subject line
                     html: `<div style="color: black;font-size: 16px;">Mã OTP của bạn là</div> <div style="color: red;font-size: 30px;margin: 20px 0">${otp}</div> <div style="color: red;font-size: 14px;font-weight: 700;">Không chuyển tiếp hoặc cung cấp mã này cho bất kỳ ai.</div> `, // plain text body
                 };
@@ -528,7 +466,7 @@ export const forgotPassword = async (req, res) => {
                 } else {
                     await User.updateMany(
                         {
-                            _id: { $in: emailValide._id },
+                            _id: { $in: emailValide == null ? phoneValide._id : emailValide._id },
                         },
                         {
                             $set: {

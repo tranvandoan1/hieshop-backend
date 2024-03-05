@@ -49,17 +49,19 @@ router.get("/secret/:userId", requireSignin, isAuth, isAdmin, (req, res) => {
     });
 });
 router.get("/user/:userId", read);
-router.get("/get-user-all", listAll);
+router.get("/get-user-all", isAuthenticateUser, listAll);
+router.post("/select-shop", isAuthenticateUser, listAll);
 const upload = multer({ storage: storage });
-router.post("/upload-admin", upload.array("files"),updateAdmin );
-router.post("/upload-user", upload.single("files"),updateUser );
+router.post("/upload-admin", upload.array("files"), updateAdmin);
+// chưa dùng
+router.post("/upload-user", upload.single("files"), updateUser);
 router.get("/get-user/:userId", list);
 router.delete("/user/:userId", remove);
 
 router.post("/upload/email", uploadEmail);
 router.post("/forgot-password", forgotPassword);
 router.post("/user/upload/password", uploadPassword);
-
+// chưa dùng
 // kiểm tra email thay đổi có đúng và đã tồn tại chưa
 router.post("/check-email-upload", checkEmailUpload);
 

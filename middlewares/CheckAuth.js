@@ -3,8 +3,9 @@ import User from '../modoles/Users';
 
 export const isAuthenticateUser = async (req, res, next) => {
   try {
+
     const authHeader = req.header("Authorization");
-    const accessToken = authHeader && authHeader.split(" ")[1];
+    const accessToken = req.body.check == 1 ? req.body.token : (authHeader && authHeader.split(" ")[1]);
     if (!accessToken) {
       return res.status(401).json({ message: "Vui lòng đăng nhập tài khoản" });
     }
@@ -12,11 +13,11 @@ export const isAuthenticateUser = async (req, res, next) => {
     const user = await User.findOne({
       _id: userToken._id,
     });
-    user
+    (user.role == 0 || req.body.check == 1)
       ? next()
       : res.status(401).json({
-          msg: "Không có quyền truy cập",
-        });
+        msg: "Không có quyền truy cập",
+      });
   } catch (error) {
     res.json({
       message: error,
