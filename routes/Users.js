@@ -49,7 +49,7 @@ router.get("/secret/:userId", requireSignin, isAuth, isAdmin, (req, res) => {
     });
 });
 router.get("/user/:userId", read);
-router.get("/get-user-all", isAuthenticateUser, listAll);
+router.post("/get-user-all", isAuthenticateUser, listAll);
 router.post("/select-shop", isAuthenticateUser, listAll);
 const upload = multer({ storage: storage });
 router.post("/upload-admin", upload.array("files"), updateAdmin);

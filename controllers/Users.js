@@ -16,7 +16,7 @@ export const list = async (req, res) => {
     return res.json(dataEn("Lấy dữ liệu thành công", 1, user))
 };
 export const listAll = async (req, res) => {
-
+    console.log('có vào')
     User.find(async (err, data) => {
         if (err) {
             return res.json({
@@ -25,7 +25,18 @@ export const listAll = async (req, res) => {
                 data: [],
             });
         }
-        const dataUserAdmin = await data.filter(item => item.role == 0)
+        const dataUserAdmin = []
+        await data.map(item => {
+            if (item.role == 0) {
+                dataUserAdmin.push({
+                    _id: item._id,
+                    name: item.name,
+                    logo: item.logo,
+                    avatar: item.avatar,
+                    code: item.code
+                })
+            }
+        })
         return res.json(dataEn("Lấy dữ liệu thành công", 1, req.body.check == 1 ? dataUserAdmin : data))
 
     });
