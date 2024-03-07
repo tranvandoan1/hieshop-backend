@@ -8,6 +8,7 @@ import {
     read,
     remove,
     removes,
+    updateView,
 } from "../controllers/Products";
 const router = express.Router();
 
@@ -20,8 +21,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 // single
-router.post("/products-add", upload.array("files"),create);
-router.post("/product-upload", upload.array("files"),update);
+router.post("/products-add", upload.array("files"), create);
+router.post("/product-upload", upload.array("files"), update);
+router.post("/product-upload-view", updateView);
 
 router.get("/get-products", list);
 router.get("/products/:productId", read);

@@ -195,7 +195,6 @@ export const list = (req, res) => {
     });
 };
 export const update = async (req, res) => {
-    console.log("vào nhé");
     const { newProduct, newClassifies, product, classifies } = JSON.parse(
         req.body.data
     );
@@ -386,3 +385,29 @@ export const update = async (req, res) => {
         }
     }
 };
+export const updateView = async (req, res) => {
+    await Product.updateMany(
+        {
+            _id: { $in: req.body._id },
+        },
+        {
+            $set: {
+                view: req.body.view + 1
+            },
+        }
+    );
+    Product.find((err, data) => {
+        if (err) {
+            return res.json({
+                message: "Không tìm thấy sản phẩm",
+                data: data,
+                status: true,
+            });
+        }
+        return res.json({
+            message: "Không thêm được. Xin thử lại !",
+            data: data,
+            status: true,
+        });
+    });
+}
