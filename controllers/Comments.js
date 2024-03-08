@@ -1,69 +1,63 @@
 import Comments from "../modoles/Comments";
 const cloudinary = require("cloudinary").v2;
 import _ from "lodash";
+
+
+async function imageAdd(imageData) {
+  const fileIds = [];
+  function uploadFile(fileMetadata, media) {
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader.upload(
+        fileMetadata,
+        { folder: "comments" },
+        async function (error, result) {
+          if (error) {
+            return ({
+              message: "Không thêm được ảnh. Xin thử lại !",
+              data: [],
+              status: false,
+            });
+          } else {
+            resolve({
+              image_id: result.public_id,
+              photo: result.url,
+            }); // Trả về ID file
+          }
+        }
+      );
+    });
+  }
+  for (let i = 0; i < imageData.length; i++) {
+    try {
+      const fileId = await uploadFile(imageData[i].path);
+      fileIds.push(fileId); // Thêm ID file vào mảng
+    } catch (err) {
+      return ({
+        message: "Không thêm được ảnh. Xin thử lại !",
+        data: [],
+        status: false,
+
+      });
+    }
+  }
+  return fileIds
+}
+
+
+
 export const create = async (req, res) => {
   const fileIds = [];
   if (req.files.length > 0) {
-    function uploadFile(fileMetadata, media) {
-      return new Promise((resolve, reject) => {
-        cloudinary.uploader.upload(
-          fileMetadata,
-          { folder: "products" },
-          async function (error, result) {
-            if (error) {
-              Comments.find((err, data) => {
-                if (err) {
-                  return res.json({
-                    message: "Không tìm thấy bình luận",
-                    data: "data",
-                    status: false,
-                  });
-                }
-                return res.json({
-                  message: "Bình luân không thành công",
-                  data: data,
-                  status: false,
-                });
-              });
-            } else {
-              resolve({
-                image_id: result.public_id,
-                photo: result.url,
-              }); // Trả về ID file
-            }
-          }
-        );
-      });
-    }
-    for (let i = 0; i < req.files.length; i++) {
-      try {
-        const fileId = await uploadFile(req.files[i].path);
-        fileIds.push(fileId); // Thêm ID file vào mảng
-      } catch (err) {
-        Comments.find((err, data) => {
-          if (err) {
-            return res.json({
-              message: "Không tìm thấy bình luận",
-              data: "data",
-              status: 1,
-            });
-          }
-          return res.json({
-            message: "Không thêm được ảnh. Xin thử lại !",
-            data: data,
-            status: 1,
-          });
-        });
-      }
-    }
+    const dataImage=await imageAdd(req.files)
+    fileIds.push(...dataImage); // Thêm ID file vào mảng
   }
+
   if (fileIds.length > 0 || req.files.length <= 0) {
     try {
       const newComment = {
         ...req.body,
-        photo: req.files.length.length <= 0 ? [] : fileIds,
+        photo: req.files.length <= 0 ? [] : fileIds,
       };
-
       await Comments.create(newComment);
       Comments.find((err, data) => {
         if (err) {
@@ -166,59 +160,11 @@ export const update = async (req, res) => {
   })
   const fileIds = [];
   if (req.files.length > 0) {
-    function uploadFile(fileMetadata, media) {
-      return new Promise((resolve, reject) => {
-        cloudinary.uploader.upload(
-          fileMetadata,
-          { folder: "products" },
-          async function (error, result) {
-            if (error) {
-              Comments.find((err, data) => {
-                if (err) {
-                  return res.json({
-                    message: "Không tìm thấy bình luận",
-                    data: "data",
-                    status: false,
-                  });
-                }
-                return res.json({
-                  message: "Bình luân không thành công",
-                  data: data,
-                  status: false,
-                });
-              });
-            } else {
-              resolve({
-                image_id: result.public_id,
-                photo: result.url,
-              }); // Trả về ID file
-            }
-          }
-        );
-      });
-    }
-    for (let i = 0; i < req.files.length; i++) {
-      try {
-        const fileId = await uploadFile(req.files[i].path);
-        fileIds.push(fileId); // Thêm ID file vào mảng
-      } catch (err) {
-        Comments.find((err, data) => {
-          if (err) {
-            return res.json({
-              message: "Không tìm thấy bình luận",
-              data: "data",
-              status: 1,
-            });
-          }
-          return res.json({
-            message: "Không thêm được ảnh. Xin thử lại !",
-            data: data,
-            status: 1,
-          });
-        });
-      }
-    }
+    const dataImage=await imageAdd(req.files)
+    fileIds.push(...dataImage); // Thêm ID file vào mảng
   }
+
+  
   if (req.files.length > 0 ? fileIds.length > 0 : (fileIds.length > 0 || value)) {
     if (removeImage.length > 0) {
       for (let i = 0; i < removeImage.length; i++) {
