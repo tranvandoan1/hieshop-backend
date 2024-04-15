@@ -25,6 +25,9 @@ import CommodityValueRoutues from "./routes/CommodityValue";
 import ShopOwnerRoutes from "./routes/ShopOwner";
 import ImageProRoutes from "./routes/ImagePro";
 import PushOtpEmail from "./routes/PushOtpEmail";
+
+const WebSocket = require('ws');
+
 const cloudinary = require("cloudinary").v2;
 cloudinary.config({
   cloud_name: "ddnkbpdzs",
@@ -87,7 +90,33 @@ app.use("/api", ClassificationRoutues);
 app.use("/api", PushOtpEmail);
 
 // listen
+
+// const http = require('http');
+// const socketIo = require('socket.io');
+
+// const server = http.createServer(app);
+// // const wss = new WebSocket.Server({ server });
+// const wss = new WebSocket.Server({ port: 3000 });
+// wss.on('connection', (ws) => {
+//   console.log('Client connected');
+
+//   ws.on('message', (message) => {
+//       // Xử lý thông điệp từ client (ví dụ: thêm sản phẩm vào cơ sở dữ liệu)
+//       console.log('Received message:', message);
+//       // // Gửi thông báo cho tất cả client khác về sự kiện thêm sản phẩm
+//       // wss.clients.forEach((client) => {
+//       //     if (client !== ws && client.readyState === WebSocket.OPEN) {
+//       //         client.send(message);
+//       //     }
+//       // });
+//   });
+// });
+
 const port = process.env.PORT || 8000;
 app.listen(port, () => {
   console.log("Thanh cong", port);
 });
+
+// server.listen(port, () => {
+//   console.log('Server is running on port 3001',port);
+// });
